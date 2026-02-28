@@ -4,6 +4,7 @@ This is the correct patch set for the current phase:
 
 - image generation must work for real via Replicate
 - audio must not block the run
+- PDF text must come from the uploaded file, not demo text
 - the UI must only receive final image URLs, never prediction URLs
 
 The previous fallback-based document is obsolete for this phase because:
@@ -19,6 +20,10 @@ The previous fallback-based document is obsolete for this phase because:
 3. `urls.get` from Replicate is **not** an image URL
 4. A scene is visually valid only if `imagePath` is a final fetchable image URL
 5. The UI must not be given fake `imagePath` values
+
+Before applying the media flow changes below, replace the current demo `3. PDF Parser` node with the real extraction helper described in:
+
+- `n8n/PDF_TEXT_EXTRACTION_HELPER.md`
 
 ## What Must Change
 
