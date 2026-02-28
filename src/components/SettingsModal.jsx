@@ -18,6 +18,12 @@ const DEMO_SCENARIOS = [
   { id: "degraded-media", label: "Degraded Media" },
 ];
 
+const inputTextStyle = {
+  color: "var(--text-primary)",
+  WebkitTextFillColor: "var(--text-primary)",
+  caretColor: "var(--text-primary)",
+};
+
 function validateFormState(formState) {
   const errors = {};
   const trimmedUrl = formState.webhookUrl.trim();
@@ -75,7 +81,13 @@ export default function SettingsModal({
     setErrors({});
     setConnectionState("idle");
     setConnectionMessage("");
-  }, [open, integrationSettings, demoMode, demoScenario]);
+  }, [
+    open,
+    integrationSettings.webhookUrl,
+    integrationSettings.requestTimeoutMs,
+    demoMode,
+    demoScenario,
+  ]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -180,6 +192,7 @@ export default function SettingsModal({
               className={`w-full rounded-md border bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
                 errors.webhookUrl ? "border-red-400/80" : "border-borderPrimary"
               }`}
+              style={inputTextStyle}
             />
             {errors.webhookUrl ? (
               <span className="mt-1 block text-[11px] text-red-300">{errors.webhookUrl}</span>
@@ -201,6 +214,7 @@ export default function SettingsModal({
               className={`w-full rounded-md border bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
                 errors.requestTimeoutMs ? "border-red-400/80" : "border-borderPrimary"
               }`}
+              style={inputTextStyle}
             />
             {errors.requestTimeoutMs ? (
               <span className="mt-1 block text-[11px] text-red-300">
@@ -230,9 +244,14 @@ export default function SettingsModal({
                 value={formState.demoScenario}
                 onChange={(event) => updateField("demoScenario", event.target.value)}
                 className="w-full rounded-md border border-borderPrimary bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary"
+                style={inputTextStyle}
               >
                 {DEMO_SCENARIOS.map((scenario) => (
-                  <option key={scenario.id} value={scenario.id}>
+                  <option
+                    key={scenario.id}
+                    value={scenario.id}
+                    style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)" }}
+                  >
                     {scenario.label}
                   </option>
                 ))}

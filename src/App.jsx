@@ -347,6 +347,14 @@ export default function App() {
 
   const styleLabel = STYLE_LABELS[selectedStyle] || "Storia";
   const statusLabel = useMemo(() => titleCase(pipeline.status), [pipeline.status]);
+  const resolvedIntegrationSettings = useMemo(
+    () => ({
+      webhookUrl: integrationSettings.webhookUrl || DEFAULT_WEBHOOK_URL,
+      requestTimeoutMs:
+        integrationSettings.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS,
+    }),
+    [integrationSettings.webhookUrl, integrationSettings.requestTimeoutMs],
+  );
 
   useEffect(() => {
     if (pipeline.status !== "processing") return undefined;
@@ -791,11 +799,7 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         demoMode={demoMode}
         demoScenario={demoScenario}
-        integrationSettings={{
-          webhookUrl: integrationSettings.webhookUrl || DEFAULT_WEBHOOK_URL,
-          requestTimeoutMs:
-            integrationSettings.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS,
-        }}
+        integrationSettings={resolvedIntegrationSettings}
         onSave={handleSaveSettings}
         onTestConnection={handleTestConnection}
       />
