@@ -59,8 +59,11 @@ export default function PDFUploader({ pdf, onFilePicked, onUseDemoPdf, onRemove,
               onUseDemoPdf?.();
             }}
           >
-            Usa PDF demo
+            Usa PDF campione
           </button>
+          <p className="mt-1 text-[10px] text-textMuted">
+            Carica un PDF campione locale pronto per la demo.
+          </p>
           <input
             ref={inputRef}
             type="file"

@@ -1,0 +1,52 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 920 >>
+stream
+BT
+/F1 14 Tf
+50 800 Td
+(EDUGEN Demo PDF - Storia) Tj
+1 0 0 1 50 732 Tm
+(Titolo: La nascita dei comuni medievali) Tj
+1 0 0 1 50 704 Tm
+(Nel XII secolo molte citta italiane iniziarono a organizzarsi in comuni autonomi.) Tj
+1 0 0 1 50 676 Tm
+(I cittadini piu influenti crearono istituzioni locali, magistrature e statuti.) Tj
+1 0 0 1 50 648 Tm
+(Questo processo rafforzo il commercio, la vita urbana e il ruolo delle corporazioni.) Tj
+1 0 0 1 50 620 Tm
+(Le tensioni con l Impero e con le signorie locali portarono a conflitti ma anche a innovazioni politiche.) Tj
+1 0 0 1 50 592 Tm
+(In molte aree dell Italia settentrionale i comuni diventarono centri di potere economico e culturale.) Tj
+1 0 0 1 50 564 Tm
+(Le piazze, i palazzi pubblici e le cattedrali mostrarono il prestigio delle nuove comunita cittadine.) Tj
+1 0 0 1 50 536 Tm
+(Questo documento e pensato per testare l estrazione testo PDF nella demo Zanichelli.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1282
+%%EOF

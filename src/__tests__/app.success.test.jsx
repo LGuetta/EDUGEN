@@ -114,7 +114,7 @@ describe("App success flow", () => {
 
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Usa PDF demo/i }));
+    await user.click(screen.getByRole("button", { name: /Usa PDF campione/i }));
     await screen.findByText(/Ready for analysis/i);
 
     await user.click(screen.getByRole("button", { name: /settings/i }));
@@ -146,7 +146,7 @@ describe("App success flow", () => {
 
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Usa PDF demo/i }));
+    await user.click(screen.getByRole("button", { name: /Usa PDF campione/i }));
     await screen.findByText(/Ready for analysis/i);
     await user.click(screen.getByRole("button", { name: /^generate$/i }));
     await screen.findByText(/2 scenes generated/i);

@@ -38,6 +38,44 @@ const STYLE_PRESETS = {
 };
 
 const FALLBACK_STYLE = STYLE_PRESETS.storia;
+const DEMO_GRAIN_SCENES = [
+  {
+    number: 1,
+    title: "Semina",
+    narrationScript:
+      "Il ciclo del grano inizia con la semina. Il seme viene deposto nel terreno e ricoperto con cura per favorire la germinazione.",
+  },
+  {
+    number: 2,
+    title: "Germinazione",
+    narrationScript:
+      "Dopo la semina, il seme assorbe acqua e si apre. Dalla cariosside nasce il primo germoglio che emerge dal terreno.",
+  },
+  {
+    number: 3,
+    title: "Levata",
+    narrationScript:
+      "La giovane pianta cresce e sviluppa il fusto. Le foglie si allungano e il grano inizia a occupare il campo.",
+  },
+  {
+    number: 4,
+    title: "Spigatura",
+    narrationScript:
+      "La spiga si forma e fuoriesce. In questa fase si sviluppano i futuri chicchi che daranno origine al raccolto.",
+  },
+  {
+    number: 5,
+    title: "Maturazione",
+    narrationScript:
+      "Le sostanze nutritive si concentrano nella spiga. I chicchi si ingrossano e il colore del campo diventa dorato.",
+  },
+  {
+    number: 6,
+    title: "Raccolta",
+    narrationScript:
+      "Quando il grano è maturo si passa alla raccolta. I chicchi vengono separati e preparati per la trasformazione in farina.",
+  },
+];
 
 function createSceneDataUrl(sceneNumber, title, colors) {
   const [a, b, c] = colors;
@@ -71,6 +109,18 @@ export function createDemoStoryboard(styleKey = "storia") {
     number: index + 1,
     title,
     imageUrl: createSceneDataUrl(index + 1, title, style.palette),
+  }));
+}
+
+export function createFallbackDemoPackage(styleKey = "storia") {
+  const style = STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
+
+  return DEMO_GRAIN_SCENES.map((scene, index) => ({
+    id: `scene_${scene.number}`,
+    number: scene.number,
+    title: scene.title,
+    narrationScript: scene.narrationScript,
+    imageUrl: createSceneDataUrl(scene.number, scene.title, style.palette),
   }));
 }
 

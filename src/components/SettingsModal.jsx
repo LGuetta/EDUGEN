@@ -236,7 +236,7 @@ export default function SettingsModal({
               onChange={(event) => updateField("demoMode", event.target.checked)}
               className="h-4 w-4 accent-accentPrimary"
             />
-            <span className="text-sm text-textSecondary">Demo mode (usa fallback locale)</span>
+            <span className="text-sm text-textSecondary">Demo mode (presentazione locale)</span>
           </label>
 
           {formState.demoMode ? (

@@ -19,7 +19,12 @@ import {
   isValidProgressTrace,
   validateN8nResponseShape,
 } from "./utils/contract";
-import { createDemoNarrationUrl, createDemoStoryboard, STYLE_LABELS } from "./utils/demoMode";
+import {
+  createDemoNarrationUrl,
+  createDemoStoryboard,
+  createFallbackDemoPackage,
+  STYLE_LABELS,
+} from "./utils/demoMode";
 import { titleCase } from "./utils/formatters";
 
 const STEP_LABELS = {
@@ -224,36 +229,17 @@ function buildDemoProgressTrace() {
 }
 
 function buildDemoResponse(selectedStyle, pdfName, requestId, demoScenario) {
-  const demoScenes = createDemoStoryboard(selectedStyle);
+  const demoScenes = createFallbackDemoPackage(selectedStyle);
   const demoAudioUrl = createDemoNarrationUrl();
   const warnings = [];
-  const scenes = demoScenes.map((scene) => {
-    if (demoScenario === "degraded-media" && scene.number % 2 === 0) {
-      warnings.push({
-        code: "SCENE_AUDIO_MISSING",
-        message: `Scene ${scene.number} missing audioPath`,
-        sceneNumber: scene.number,
-        severity: "warning",
-      });
-      warnings.push({
-        code: "SCENE_IMAGE_MISSING",
-        message: `Scene ${scene.number} missing imagePath`,
-        sceneNumber: scene.number,
-        severity: "warning",
-      });
-    }
-
-    return {
-      sceneNumber: scene.number,
-      title: scene.title,
-      narrationScript: `Script demo scena ${scene.number} per ${pdfName}. Contenuto narrativo generato a scopo di presentazione.`,
-      imagePath:
-        demoScenario === "degraded-media" && scene.number % 2 === 0 ? "" : scene.imageUrl,
-      audioPath:
-        demoScenario === "degraded-media" && scene.number % 2 === 0 ? "" : demoAudioUrl,
-      duration: 20,
-    };
-  });
+  const scenes = demoScenes.map((scene) => ({
+    sceneNumber: scene.number,
+    title: scene.title,
+    narrationScript: scene.narrationScript,
+    imagePath: scene.imageUrl,
+    audioPath: demoAudioUrl,
+    duration: 20,
+  }));
 
   return {
     success: true,
@@ -272,12 +258,61 @@ function buildDemoResponse(selectedStyle, pdfName, requestId, demoScenario) {
       {
         time: new Date().toLocaleTimeString("it-IT", { hour12: false }),
         type: "info",
-        message: "Modalità demo locale attiva.",
+        message: `Modalità demo attiva. Elaborazione locale completata per ${pdfName}.`,
       },
     ],
     progressTrace: buildDemoProgressTrace(),
     demoAudioUrl,
   };
+}
+
+function createBundledDemoPdfBlob() {
+  const content = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 425 >>
+stream
+BT
+/F1 14 Tf
+50 800 Td
+(EDUGEN Demo PDF - Storia) Tj
+1 0 0 1 50 772 Tm
+(Titolo: La nascita dei comuni medievali) Tj
+1 0 0 1 50 744 Tm
+(Nel XII secolo molte citta italiane iniziarono a organizzarsi in comuni autonomi.) Tj
+1 0 0 1 50 716 Tm
+(I cittadini piu influenti crearono istituzioni locali, magistrature e statuti.) Tj
+1 0 0 1 50 688 Tm
+(Questo documento serve a testare il parser PDF reale della demo.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+787
+%%EOF`;
+
+  return new Blob([content], { type: "application/pdf" });
 }
 
 function downloadTextFile(filename, content, mimeType = "text/plain;charset=utf-8") {
@@ -748,15 +783,34 @@ export default function App() {
   };
 
   const handleUseDemoPdf = async () => {
-    const demoBlob = new Blob(
-      ["%PDF-1.4\n% EDUGEN demo placeholder\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"],
-      { type: "application/pdf" },
-    );
-    const demoFile = new File([demoBlob], "capitolo_storia_demo.pdf", {
-      type: "application/pdf",
-      lastModified: Date.now(),
-    });
-    await handleFilePicked(demoFile);
+    try {
+      let blob = null;
+
+      try {
+        const response = await fetch("/demo/edugen-storia-demo.pdf");
+        if (response.ok) {
+          blob = await response.blob();
+        }
+      } catch {
+        blob = null;
+      }
+
+      if (!blob) {
+        blob = createBundledDemoPdfBlob();
+      }
+
+      const demoFile = new File([blob], "edugen-storia-demo.pdf", {
+        type: "application/pdf",
+        lastModified: Date.now(),
+      });
+
+      await handleFilePicked(demoFile);
+    } catch (error) {
+      appendLog(
+        "error",
+        `Impossibile caricare il PDF campione: ${error instanceof Error ? error.message : "errore sconosciuto"}`,
+      );
+    }
   };
 
   const handleSaveSettings = (nextSettings) => {

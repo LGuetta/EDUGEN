@@ -71,7 +71,7 @@ describe("App failure and degraded paths", () => {
 
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Usa PDF demo/i }));
+    await user.click(screen.getByRole("button", { name: /Usa PDF campione/i }));
     await screen.findByText(/Ready for analysis/i);
 
     const generateButton = screen.getByRole("button", { name: /^generate$/i });
@@ -136,7 +136,7 @@ describe("App failure and degraded paths", () => {
 
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Usa PDF demo/i }));
+    await user.click(screen.getByRole("button", { name: /Usa PDF campione/i }));
     await screen.findByText(/Ready for analysis/i);
     await user.click(screen.getByRole("button", { name: /^generate$/i }));
 
