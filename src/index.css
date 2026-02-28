@@ -122,3 +122,25 @@ body {
   height: 8px;
   border-radius: 999px;
 }
+
+.settings-input {
+  background-color: rgba(10, 10, 15, 0.6);
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  color-scheme: dark;
+}
+
+.settings-input::placeholder {
+  color: var(--text-muted);
+}
+
+.settings-input:-webkit-autofill,
+.settings-input:-webkit-autofill:hover,
+.settings-input:-webkit-autofill:focus,
+.settings-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(10, 10, 15, 0.96) inset;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  transition: background-color 5000s ease-in-out 0s;
+}

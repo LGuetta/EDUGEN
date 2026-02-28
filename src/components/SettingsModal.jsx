@@ -19,9 +19,11 @@ const DEMO_SCENARIOS = [
 ];
 
 const inputTextStyle = {
-  color: "var(--text-primary)",
-  WebkitTextFillColor: "var(--text-primary)",
-  caretColor: "var(--text-primary)",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  caretColor: "#ffffff",
+  backgroundColor: "rgba(10, 10, 15, 0.6)",
+  colorScheme: "dark",
 };
 
 function validateFormState(formState) {
@@ -189,7 +191,7 @@ export default function SettingsModal({
               type="text"
               value={formState.webhookUrl}
               onChange={(event) => updateField("webhookUrl", event.target.value)}
-              className={`w-full rounded-md border bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
+              className={`settings-input w-full rounded-md border px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
                 errors.webhookUrl ? "border-red-400/80" : "border-borderPrimary"
               }`}
               style={inputTextStyle}
@@ -211,7 +213,7 @@ export default function SettingsModal({
               step={1000}
               value={formState.requestTimeoutMs}
               onChange={(event) => updateField("requestTimeoutMs", event.target.value)}
-              className={`w-full rounded-md border bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
+              className={`settings-input w-full rounded-md border px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
                 errors.requestTimeoutMs ? "border-red-400/80" : "border-borderPrimary"
               }`}
               style={inputTextStyle}
@@ -243,7 +245,7 @@ export default function SettingsModal({
               <select
                 value={formState.demoScenario}
                 onChange={(event) => updateField("demoScenario", event.target.value)}
-                className="w-full rounded-md border border-borderPrimary bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary"
+                className="settings-input w-full rounded-md border border-borderPrimary px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary"
                 style={inputTextStyle}
               >
                 {DEMO_SCENARIOS.map((scenario) => (
