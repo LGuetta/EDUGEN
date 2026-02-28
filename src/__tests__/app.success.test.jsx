@@ -96,6 +96,7 @@ describe("App success flow", () => {
       pages: 8,
       words: 1524,
       size: 73,
+      content: "data:application/pdf;base64,VEVTVA==",
       preview: "blob:pdf-preview",
       subject: "Storia",
       language: "Italiano",

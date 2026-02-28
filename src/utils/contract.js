@@ -3,12 +3,13 @@ export const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
 export const ALLOWED_RUNTIME_MODES = ["live", "demo"];
 export const CANONICAL_STAGE_IDS = ["input", "parsing", "llm", "style", "voice", "image", "output"];
 
-export function buildN8nPayload({ pdfPath, styleModule, videoPreset }) {
+export function buildN8nPayload({ pdfPath, pdfContent, styleModule, videoPreset }) {
   return {
+    requestId: `req_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+    pdfContent: pdfContent || "",
     pdfPath,
     styleModule,
     videoPreset,
-    requestId: `req_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
     sentAt: new Date().toISOString(),
     uiSource: "edugen-ui",
   };

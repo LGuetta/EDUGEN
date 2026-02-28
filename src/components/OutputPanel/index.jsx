@@ -3,7 +3,14 @@ import AudioPlayer from "./AudioPlayer";
 import ExportOptions from "./ExportOptions";
 import Storyboard from "./Storyboard";
 
-export default function OutputPanel({ scenes, audioUrl, loading, warnings = [] }) {
+export default function OutputPanel({
+  scenes,
+  audioUrl,
+  loading,
+  warnings = [],
+  exportAvailability,
+  onExport,
+}) {
   const hasOutput = scenes.length > 0 || Boolean(audioUrl);
   const [selectedSceneId, setSelectedSceneId] = useState(null);
   const [warningsOpen, setWarningsOpen] = useState(false);
@@ -72,7 +79,11 @@ export default function OutputPanel({ scenes, audioUrl, loading, warnings = [] }
         onSelectSceneIndex={handleSelectSceneIndex}
         fallbackAudioUrl={audioUrl}
       />
-      <ExportOptions enabled={hasOutput} />
+      <ExportOptions
+        enabled={hasOutput}
+        exportAvailability={exportAvailability}
+        onExport={onExport}
+      />
     </aside>
   );
 }

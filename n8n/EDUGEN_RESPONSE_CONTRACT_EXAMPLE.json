@@ -1,0 +1,72 @@
+{
+  "success": true,
+  "requestId": "req_177229084476_294e87",
+  "mode": "live",
+  "data": {
+    "storyboard": {
+      "title": "Ciclo del Grano",
+      "totalScenes": 6,
+      "totalDuration": 90,
+      "scenes": [
+        {
+          "sceneNumber": 1,
+          "title": "Semina",
+          "narrationScript": "La semina è il primo passo del ciclo del grano.",
+          "imagePath": "https://replicate.delivery/pbxt/example-scene-01.png",
+          "audioPath": null,
+          "duration": 15,
+          "generatedReal": true,
+          "imageGeneratedReal": true,
+          "audioGeneratedReal": false
+        },
+        {
+          "sceneNumber": 2,
+          "title": "Germinazione",
+          "narrationScript": "Il seme assorbe acqua e germoglia.",
+          "imagePath": "https://replicate.delivery/pbxt/example-scene-02.png",
+          "audioPath": null,
+          "duration": 15,
+          "generatedReal": true,
+          "imageGeneratedReal": true,
+          "audioGeneratedReal": false
+        }
+      ]
+    },
+    "metadata": {
+      "styleModule": "storia",
+      "videoPreset": "didattico",
+      "processedAt": "2026-02-28T16:30:00.000Z"
+    },
+    "stats": {
+      "totalScenes": 6,
+      "totalDuration": 90,
+      "style": "storia",
+      "realGeneratedImages": 6,
+      "realGeneratedAudio": 0
+    }
+  },
+  "warnings": [
+    {
+      "code": "SCENE_AUDIO_UNAVAILABLE",
+      "message": "Scene 1 audio unavailable",
+      "sceneNumber": 1,
+      "severity": "warning"
+    }
+  ],
+  "progressTrace": [
+    { "stage": "input", "status": "complete", "time": "00:00:01" },
+    { "stage": "parsing", "status": "complete", "time": "00:00:03" },
+    { "stage": "llm", "status": "complete", "time": "00:00:10" },
+    { "stage": "style", "status": "complete", "time": "00:00:14" },
+    { "stage": "voice", "status": "complete", "time": "00:00:18" },
+    { "stage": "image", "status": "complete", "time": "00:00:24" },
+    { "stage": "output", "status": "complete", "time": "00:00:26" }
+  ],
+  "logs": [
+    { "time": "00:00:01", "message": "✓ PDF caricato", "type": "success" },
+    { "time": "00:00:03", "message": "✓ Testo estratto", "type": "success" },
+    { "time": "00:00:10", "message": "✓ Storyboard generato", "type": "success" },
+    { "time": "00:00:24", "message": "✓ Immagini generate", "type": "success" },
+    { "time": "00:00:26", "message": "✅ Pipeline completata!", "type": "success" }
+  ]
+}

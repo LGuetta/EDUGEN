@@ -8,13 +8,16 @@ const EXPORT_FORMATS = [
   { id: "package", label: "Full Package", size: "~32 MB", checked: false },
 ];
 
-export default function ExportOptions({ enabled }) {
+export default function ExportOptions({ enabled, exportAvailability = {}, onExport }) {
   const [formats, setFormats] = useState(EXPORT_FORMATS);
 
   const toggle = (id) =>
     setFormats((prev) =>
       prev.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)),
     );
+
+  const canDownload = (id) => Boolean(enabled && exportAvailability[id]);
+  const selectedFormats = formats.filter((format) => format.checked && canDownload(format.id));
 
   return (
     <section className="panel mt-3 p-3">
@@ -35,12 +38,13 @@ export default function ExportOptions({ enabled }) {
               </label>
               <button
                 type="button"
+                onClick={() => onExport?.(format.id)}
                 className={`rounded border p-1.5 ${
-                  enabled
+                  canDownload(format.id)
                     ? "border-borderAccent text-textSecondary hover:bg-bgHover hover:text-white"
                     : "cursor-not-allowed border-borderPrimary text-textMuted"
                 }`}
-                disabled={!enabled}
+                disabled={!canDownload(format.id)}
               >
                 <Download size={13} />
               </button>
@@ -51,9 +55,10 @@ export default function ExportOptions({ enabled }) {
       </div>
       <button
         type="button"
-        disabled={!enabled}
+        onClick={() => onExport?.("all", selectedFormats.map((format) => format.id))}
+        disabled={!selectedFormats.length}
         className={`mt-3 w-full rounded-md border px-3 py-2 text-xs font-semibold tracking-[0.08em] ${
-          enabled
+          selectedFormats.length
             ? "border-accentPrimary/70 bg-accentPrimary/15 text-textPrimary hover:bg-accentPrimary/25"
             : "cursor-not-allowed border-borderPrimary bg-bgPrimary/45 text-textMuted"
         }`}

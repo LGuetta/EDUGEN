@@ -290,6 +290,49 @@ function downloadTextFile(filename, content, mimeType = "text/plain;charset=utf-
   URL.revokeObjectURL(url);
 }
 
+function guessExtensionFromUrl(url, fallback = "bin") {
+  if (!url) return fallback;
+  try {
+    const pathname = new URL(url, window.location.origin).pathname;
+    const lastSegment = pathname.split("/").pop() || "";
+    const dotIndex = lastSegment.lastIndexOf(".");
+    if (dotIndex >= 0 && dotIndex < lastSegment.length - 1) {
+      return lastSegment.slice(dotIndex + 1).toLowerCase();
+    }
+  } catch {
+    return fallback;
+  }
+  return fallback;
+}
+
+async function downloadUrlFile(url, filename) {
+  if (!url) {
+    throw new Error("URL di download mancante");
+  }
+
+  try {
+    const response = await fetch(url, { mode: "cors" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(objectUrl);
+    return;
+  } catch {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.target = "_blank";
+    anchor.rel = "noreferrer";
+    anchor.download = filename;
+    anchor.click();
+  }
+}
+
 export default function App() {
   const {
     pdf,
@@ -484,6 +527,7 @@ export default function App() {
         pages: parsed.pages,
         words: parsed.words,
         size: parsed.size,
+        content: parsed.content,
         preview: parsed.preview,
       });
       setAnalysis({
@@ -535,6 +579,7 @@ export default function App() {
 
     const requestPayload = buildN8nPayload({
       pdfPath: pdf.name,
+      pdfContent: pdf.content,
       styleModule: selectedStyle,
       videoPreset: selectedVideoPreset,
     });
@@ -734,12 +779,52 @@ export default function App() {
     });
 
   const handleExport = (kind) => {
+    const exportUrls = lastResponsePayload?.data?.exports || {};
+    const firstPlayableAudio =
+      output.storyboard.find((scene) => scene.audioPath)?.audioPath || output.audioUrl || null;
+
     if (kind === "storyboard") {
       downloadTextFile(
         "edugen-storyboard.json",
         JSON.stringify(output.storyboard, null, 2),
         "application/json;charset=utf-8",
       );
+    }
+    if (kind === "audio") {
+      if (!firstPlayableAudio) {
+        appendLog("warning", "Nessun file audio disponibile per il download.");
+      } else {
+        void downloadUrlFile(
+          firstPlayableAudio,
+          `edugen-narration.${guessExtensionFromUrl(firstPlayableAudio, "mp3")}`,
+        ).catch((error) => {
+          appendLog("error", `Download audio fallito: ${getErrorMessage(error)}`);
+        });
+      }
+    }
+    if (kind === "video") {
+      if (!exportUrls.videoUrl) {
+        appendLog("warning", "Il backend non ha fornito un export video.");
+      } else {
+        void downloadUrlFile(
+          exportUrls.videoUrl,
+          `edugen-video.${guessExtensionFromUrl(exportUrls.videoUrl, "mp4")}`,
+        ).catch((error) => {
+          appendLog("error", `Download video fallito: ${getErrorMessage(error)}`);
+        });
+      }
+    }
+    if (kind === "package") {
+      if (!exportUrls.packageUrl) {
+        appendLog("warning", "Il backend non ha fornito un export package.");
+      } else {
+        void downloadUrlFile(
+          exportUrls.packageUrl,
+          `edugen-package.${guessExtensionFromUrl(exportUrls.packageUrl, "zip")}`,
+        ).catch((error) => {
+          appendLog("error", `Download package fallito: ${getErrorMessage(error)}`);
+        });
+      }
     }
     if (kind === "logs") {
       const text = logs.map((entry) => `[${entry.timestamp}] ${entry.type.toUpperCase()} ${entry.message}`).join("\n");
@@ -777,8 +862,36 @@ export default function App() {
         "application/json;charset=utf-8",
       );
     }
+    if (kind === "all") {
+      return;
+    }
     setIsExportMenuOpen(false);
   };
+
+  const handlePanelExport = (kind, selectedKinds = []) => {
+    if (kind !== "all") {
+      handleExport(kind);
+      return;
+    }
+
+    selectedKinds.forEach((selectedKind, index) => {
+      window.setTimeout(() => {
+        handleExport(selectedKind);
+      }, index * 180);
+    });
+  };
+
+  const exportAvailability = useMemo(
+    () => ({
+      storyboard: output.storyboard.length > 0,
+      audio: Boolean(
+        output.audioUrl || output.storyboard.some((scene) => scene.audioPath),
+      ),
+      video: Boolean(lastResponsePayload?.data?.exports?.videoUrl),
+      package: Boolean(lastResponsePayload?.data?.exports?.packageUrl),
+    }),
+    [lastResponsePayload, output.audioUrl, output.storyboard],
+  );
 
   return (
     <div className="relative flex h-full flex-col">
@@ -837,6 +950,8 @@ export default function App() {
               audioUrl={output.audioUrl}
               loading={pipeline.status === "processing"}
               warnings={warnings}
+              exportAvailability={exportAvailability}
+              onExport={handlePanelExport}
             />
           </main>
 

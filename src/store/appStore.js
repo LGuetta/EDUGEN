@@ -46,6 +46,7 @@ export const useAppStore = create((set) => ({
     pages: 0,
     words: 0,
     size: 0,
+    content: "",
     preview: null,
   },
   analysis: defaultAnalysis,
@@ -72,7 +73,7 @@ export const useAppStore = create((set) => ({
   setPdf: (pdf) => set({ pdf }),
   clearPdf: () =>
     set({
-      pdf: { file: null, name: "", pages: 0, words: 0, size: 0, preview: null },
+      pdf: { file: null, name: "", pages: 0, words: 0, size: 0, content: "", preview: null },
       analysis: defaultAnalysis,
       output: defaultOutput,
       pipeline: {
