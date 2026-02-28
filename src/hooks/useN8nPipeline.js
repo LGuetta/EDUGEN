@@ -17,6 +17,8 @@ export function useN8nPipeline() {
   const processDocument = useCallback(async (payload, options = {}) => {
     const webhookUrl = options.webhookUrl || N8N_WEBHOOK_URL;
     const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 60000;
+    const onAttempt = typeof options.onAttempt === "function" ? options.onAttempt : null;
+    const onResponse = typeof options.onResponse === "function" ? options.onResponse : null;
     setIsLoading(true);
     setError(null);
     try {
@@ -28,12 +30,26 @@ export function useN8nPipeline() {
           await new Promise((resolve) => window.setTimeout(resolve, delay));
         }
 
+        onAttempt?.({
+          attempt: attempt + 1,
+          totalAttempts: RETRY_DELAYS.length,
+          retrying: attempt > 0,
+          webhookUrl,
+          timeoutMs,
+          requestId: payload?.requestId || null,
+        });
+
         try {
           const response = await axios.post(webhookUrl, payload, {
             timeout: timeoutMs,
             headers: {
               "Content-Type": "application/json",
             },
+          });
+          onResponse?.({
+            attempt: attempt + 1,
+            status: response.status,
+            requestId: payload?.requestId || null,
           });
           return response.data;
         } catch (err) {

@@ -25,10 +25,19 @@ export default function AudioPlayer({
     return `Scene ${selectedScene.number} · ${selectedScene.title}`;
   }, [selectedScene]);
 
-  const { audioRef, isPlaying, currentTime, duration, volume, setVolume, togglePlay, seek } =
-    useAudioPlayer(selectedAudioUrl);
+  const {
+    audioRef,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    hasMediaError,
+    setVolume,
+    togglePlay,
+    seek,
+  } = useAudioPlayer(selectedAudioUrl);
 
-  const disabled = !selectedAudioUrl;
+  const disabled = !selectedAudioUrl || hasMediaError;
 
   return (
     <section className="panel mt-3 p-3">
@@ -37,6 +46,16 @@ export default function AudioPlayer({
 
       <div className="rounded-lg border border-borderPrimary bg-bgPrimary/50 p-3">
         <p className="mb-2 truncate text-[11px] text-textSecondary">{narrationLabel}</p>
+        {!selectedAudioUrl ? (
+          <p className="mb-3 text-[11px] text-textMuted">
+            Nessun audio disponibile per la scena selezionata.
+          </p>
+        ) : null}
+        {hasMediaError ? (
+          <p className="mb-3 text-[11px] text-accentWarning">
+            Audio non riproducibile. Verifica `audioPath` del backend.
+          </p>
+        ) : null}
         {hasMultiSceneAudio ? (
           <div className="mb-3 flex items-center justify-between rounded-md border border-borderPrimary px-2 py-1.5">
             <button

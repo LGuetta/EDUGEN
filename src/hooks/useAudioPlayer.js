@@ -6,23 +6,35 @@ export function useAudioPlayer(audioUrl) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [hasMediaError, setHasMediaError] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return undefined;
 
-    const handleLoaded = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const handleLoaded = () => {
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+      setHasMediaError(false);
+    };
     const handleTime = () => setCurrentTime(audio.currentTime);
     const handleEnd = () => setIsPlaying(false);
+    const handleError = () => {
+      setIsPlaying(false);
+      setDuration(0);
+      setCurrentTime(0);
+      setHasMediaError(true);
+    };
 
     audio.addEventListener("loadedmetadata", handleLoaded);
     audio.addEventListener("timeupdate", handleTime);
     audio.addEventListener("ended", handleEnd);
+    audio.addEventListener("error", handleError);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoaded);
       audio.removeEventListener("timeupdate", handleTime);
       audio.removeEventListener("ended", handleEnd);
+      audio.removeEventListener("error", handleError);
     };
   }, [audioUrl]);
 
@@ -33,11 +45,15 @@ export function useAudioPlayer(audioUrl) {
   }, [volume]);
 
   useEffect(() => {
-    if (!audioUrl) {
-      setIsPlaying(false);
-      setCurrentTime(0);
-      setDuration(0);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
     }
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setHasMediaError(false);
   }, [audioUrl]);
 
   const togglePlay = async () => {
@@ -48,8 +64,14 @@ export function useAudioPlayer(audioUrl) {
       setIsPlaying(false);
       return;
     }
-    await audio.play();
-    setIsPlaying(true);
+    try {
+      await audio.play();
+      setIsPlaying(true);
+      setHasMediaError(false);
+    } catch {
+      setIsPlaying(false);
+      setHasMediaError(true);
+    }
   };
 
   const seek = (nextTime) => {
@@ -65,6 +87,7 @@ export function useAudioPlayer(audioUrl) {
     currentTime,
     duration,
     volume,
+    hasMediaError,
     setVolume,
     togglePlay,
     seek,

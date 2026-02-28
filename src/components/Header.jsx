@@ -40,6 +40,7 @@ export default function Header({
           <button
             type="button"
             onClick={onOpenSettings}
+            data-settings-toggle="true"
             className="rounded-md border border-borderPrimary bg-bgTertiary p-2 text-textSecondary transition hover:bg-bgHover hover:text-textPrimary"
           >
             <Settings size={16} />
@@ -47,6 +48,7 @@ export default function Header({
           <button
             type="button"
             onClick={onToggleExportMenu}
+            data-export-toggle="true"
             disabled={!canExport}
             className={`rounded-md border p-2 transition ${
               canExport

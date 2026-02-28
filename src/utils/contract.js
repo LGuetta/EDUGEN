@@ -1,3 +1,6 @@
+export const DEFAULT_WEBHOOK_URL = "http://localhost:5678/webhook/edugen-process";
+export const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
+
 export function buildN8nPayload({ pdfPath, styleModule, videoPreset }) {
   return {
     pdfPath,
@@ -41,12 +44,6 @@ export function validateN8nResponseShape(payload) {
         }
         if (typeof scene.sceneNumber !== "number") {
           errors.push(`Scene ${index + 1}: missing/invalid sceneNumber`);
-        }
-        if (typeof scene.title !== "string") {
-          errors.push(`Scene ${index + 1}: missing/invalid title`);
-        }
-        if (typeof scene.narrationScript !== "string") {
-          errors.push(`Scene ${index + 1}: missing/invalid narrationScript`);
         }
       });
     }

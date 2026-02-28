@@ -4,7 +4,10 @@ export default function ExportMenu({ open, onExport }) {
   if (!open) return null;
 
   return (
-    <div className="absolute right-5 top-[68px] z-30 w-[220px] rounded-lg border border-borderPrimary bg-bgSecondary/95 p-2 shadow-deep">
+    <div
+      data-export-menu="true"
+      className="absolute right-5 top-[68px] z-30 w-[220px] rounded-lg border border-borderPrimary bg-bgSecondary/95 p-2 shadow-deep"
+    >
       <MenuButton label="Storyboard JSON" onClick={() => onExport("storyboard")} />
       <MenuButton label="System Log TXT" onClick={() => onExport("logs")} />
       <MenuButton label="Session Snapshot" onClick={() => onExport("session")} />

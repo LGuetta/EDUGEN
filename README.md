@@ -29,5 +29,22 @@ npm run preview
 ## Note tecniche
 
 - La demo è ottimizzata per presentazione desktop (1920x1080).
-- `demoMode` è attivo di default nello store (`src/store/appStore.js`).
+- `demoMode` è disattivato di default nello store (`src/store/appStore.js`).
 - Per collegare n8n reale, impostare `demoMode: false` e adattare endpoint/response.
+
+## Preflight Demo
+
+Prima di una presentazione:
+
+1. Avvia n8n locale e verifica che il webhook risponda su `http://localhost:5678/webhook/edugen-process`.
+2. Apri la UI e controlla da `Settings`:
+   - webhook corretto
+   - timeout adeguato (`60000 ms` consigliato)
+   - `Demo mode` impostato intenzionalmente
+3. Carica un PDF demo e lancia un `Generate` di smoke test.
+4. Verifica:
+   - log popolato
+   - storyboard renderizzato
+   - audio selezionabile/riproducibile
+   - export funzionante
+5. Se n8n non risponde durante la demo, attiva `Demo mode` da `Settings` e rilancia il flusso.

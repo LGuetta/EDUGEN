@@ -10,7 +10,13 @@ import LiveLog from "./components/Terminal/LiveLog";
 import { useN8nPipeline } from "./hooks/useN8nPipeline";
 import { usePDFParser } from "./hooks/usePDFParser";
 import { useAppStore } from "./store/appStore";
-import { buildN8nPayload, normalizeInboundLogs, validateN8nResponseShape } from "./utils/contract";
+import {
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  DEFAULT_WEBHOOK_URL,
+  buildN8nPayload,
+  normalizeInboundLogs,
+  validateN8nResponseShape,
+} from "./utils/contract";
 import { createDemoNarrationUrl, createDemoStoryboard, STYLE_LABELS } from "./utils/demoMode";
 import { titleCase } from "./utils/formatters";
 
@@ -72,23 +78,61 @@ function toStateMap(stage) {
 
 function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
   const fallback = createDemoStoryboard(style);
-  return rawScenes.map((scene, index) => {
+  const warnings = [];
+  let playableAudioCount = 0;
+
+  const scenes = rawScenes.map((scene, index) => {
     const fallbackScene = fallback[index % fallback.length];
+    const sceneNumber = Number.isFinite(scene.sceneNumber) ? scene.sceneNumber : index + 1;
+    const hasTitle = typeof scene.title === "string" && scene.title.trim().length > 0;
+    const hasNarration =
+      typeof scene.narrationScript === "string" && scene.narrationScript.trim().length > 0;
+    const hasImage = typeof scene.imagePath === "string" && scene.imagePath.trim().length > 0;
+    const hasAudio = typeof scene.audioPath === "string" && scene.audioPath.trim().length > 0;
+    const resolvedAudioPath = scene.audioPath || fallbackAudioUrl || null;
+
+    if (!hasTitle) {
+      warnings.push(`Scene ${sceneNumber} missing title, using fallback label.`);
+    }
+    if (!hasNarration) {
+      warnings.push(`Scene ${sceneNumber} missing narrationScript, using placeholder copy.`);
+    }
+    if (!hasImage) {
+      warnings.push(`Scene ${sceneNumber} missing imagePath, using generated placeholder.`);
+    }
+    if (!hasAudio) {
+      warnings.push(
+        resolvedAudioPath
+          ? `Scene ${sceneNumber} missing audioPath, using fallback audio.`
+          : `Scene ${sceneNumber} missing audioPath, no audio available.`,
+      );
+    }
+    if (resolvedAudioPath) {
+      playableAudioCount += 1;
+    }
+
     return {
-      id: `scene_${scene.sceneNumber || index + 1}`,
-      number: scene.sceneNumber || index + 1,
-      title: scene.title || `Scene ${index + 1}`,
+      id: `scene_${sceneNumber}`,
+      number: sceneNumber,
+      title: hasTitle ? scene.title.trim() : `Scene ${sceneNumber}`,
       narrationScript:
-        scene.narrationScript ||
-        "Narrazione in elaborazione. Questo testo verrà aggiornato dal backend.",
-      imageUrl: scene.imagePath || fallbackScene.imageUrl,
-      audioPath: scene.audioPath || fallbackAudioUrl || null,
-      duration: scene.duration || 20,
+        hasNarration
+          ? scene.narrationScript
+          : "Narrazione in elaborazione. Questo testo verrà aggiornato dal backend.",
+      imageUrl: hasImage ? scene.imagePath : fallbackScene.imageUrl,
+      audioPath: resolvedAudioPath,
+      duration: Number(scene.duration) > 0 ? Number(scene.duration) : 20,
     };
   });
+
+  return {
+    scenes,
+    warnings,
+    playableAudioCount,
+  };
 }
 
-function buildDemoResponse(selectedStyle, pdfName) {
+function buildDemoResponse(selectedStyle, pdfName, requestId) {
   const demoScenes = createDemoStoryboard(selectedStyle);
   const demoAudioUrl = createDemoNarrationUrl();
   const scenes = demoScenes.map((scene) => ({
@@ -102,6 +146,7 @@ function buildDemoResponse(selectedStyle, pdfName) {
 
   return {
     success: true,
+    requestId,
     data: {
       storyboard: {
         title: "Storyboard Demo",
@@ -172,6 +217,8 @@ export default function App() {
   const animationIntervalRef = useRef(null);
   const generatedAudioRef = useRef(null);
   const activeStageRef = useRef(PARALLEL_STAGES[0]);
+  const requestInFlightRef = useRef(false);
+  const activeRequestIdRef = useRef(null);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -185,10 +232,40 @@ export default function App() {
     return () => window.clearInterval(timerId);
   }, [pipeline.status, incrementElapsedTime]);
 
+  useEffect(() => {
+    if (!isExportMenuOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (
+        event.target.closest("[data-export-menu]") ||
+        event.target.closest("[data-export-toggle]")
+      ) {
+        return;
+      }
+      setIsExportMenuOpen(false);
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsExportMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isExportMenuOpen]);
+
   useEffect(
     () => () => {
       if (animationIntervalRef.current) window.clearInterval(animationIntervalRef.current);
       if (generatedAudioRef.current) URL.revokeObjectURL(generatedAudioRef.current);
+      requestInFlightRef.current = false;
+      activeRequestIdRef.current = null;
       if (pdf.preview) URL.revokeObjectURL(pdf.preview);
     },
     [pdf.preview],
@@ -256,6 +333,8 @@ export default function App() {
 
   const handleRemoveFile = () => {
     stopPipelineAnimation();
+    activeRequestIdRef.current = null;
+    requestInFlightRef.current = false;
     if (generatedAudioRef.current) {
       URL.revokeObjectURL(generatedAudioRef.current);
       generatedAudioRef.current = null;
@@ -266,7 +345,7 @@ export default function App() {
   };
 
   const handleGenerate = async () => {
-    if (!pdf.file || pipeline.status === "processing") return;
+    if (!pdf.file || pipeline.status === "processing" || requestInFlightRef.current) return;
 
     stopPipelineAnimation();
     if (generatedAudioRef.current) {
@@ -286,6 +365,10 @@ export default function App() {
       styleModule: selectedStyle,
       videoPreset: selectedVideoPreset,
     });
+    requestInFlightRef.current = true;
+    activeRequestIdRef.current = requestPayload.requestId;
+
+    appendLog("info", `Richiesta accodata. requestId=${requestPayload.requestId}`);
 
     appendLog(
       "info",
@@ -296,11 +379,35 @@ export default function App() {
 
     try {
       const response = demoMode
-        ? buildDemoResponse(selectedStyle, pdf.name)
+        ? buildDemoResponse(selectedStyle, pdf.name, requestPayload.requestId)
         : await processDocument(requestPayload, {
             webhookUrl: integrationSettings.webhookUrl,
             timeoutMs: integrationSettings.requestTimeoutMs,
+            onAttempt: ({ attempt, totalAttempts, retrying, webhookUrl, timeoutMs }) => {
+              if (retrying) {
+                appendLog(
+                  "warning",
+                  `Retry ${attempt}/${totalAttempts} verso ${webhookUrl} (timeout ${timeoutMs}ms)`,
+                );
+                return;
+              }
+              appendLog(
+                "info",
+                `Richiesta inviata a ${webhookUrl} (timeout ${timeoutMs}ms)`,
+              );
+            },
+            onResponse: ({ status, attempt }) => {
+              appendLog("info", `Response ricevuta da n8n (HTTP ${status}, attempt ${attempt})`);
+            },
           });
+
+      if (demoMode) {
+        appendLog("info", "Demo mode attivo: webhook bypass, uso response locale deterministica.");
+      }
+
+      if (activeRequestIdRef.current !== requestPayload.requestId) {
+        return;
+      }
 
       stopPipelineAnimation();
 
@@ -308,10 +415,25 @@ export default function App() {
         throw new Error(response?.message || "Il backend ha risposto con success=false");
       }
 
+      const responseRequestId = response?.requestId || response?.data?.requestId || null;
+      if (responseRequestId && responseRequestId !== requestPayload.requestId) {
+        throw new Error(
+          `requestId mismatch: atteso ${requestPayload.requestId}, ricevuto ${responseRequestId}`,
+        );
+      }
+      appendLog(
+        "info",
+        responseRequestId
+          ? `Response associata correttamente a requestId=${responseRequestId}`
+          : `Response senza requestId echo: associata alla richiesta attiva ${requestPayload.requestId}`,
+      );
+      appendLog("info", "Validazione response in corso...");
+
       const validation = validateN8nResponseShape(response);
       if (!validation.valid) {
         throw new Error(`Contratto response non valido: ${validation.errors.join(" | ")}`);
       }
+      appendLog("success", "Validazione response completata.");
 
       if (response?.demoAudioUrl) {
         generatedAudioRef.current = response.demoAudioUrl;
@@ -325,9 +447,17 @@ export default function App() {
       const storyboardData = response?.data?.storyboard;
       const rawScenes = storyboardData?.scenes || [];
       const fallbackAudioUrl = response?.demoAudioUrl || null;
-      const scenes = normalizeBackendScenes(rawScenes, selectedStyle, fallbackAudioUrl);
+      const {
+        scenes,
+        warnings,
+        playableAudioCount,
+      } = normalizeBackendScenes(rawScenes, selectedStyle, fallbackAudioUrl);
       if (!scenes.length) {
         throw new Error("Nessuna scena ricevuta dal backend.");
+      }
+      warnings.forEach((message) => appendLog("warning", message));
+      if (!playableAudioCount) {
+        appendLog("warning", "Nessuna traccia audio riproducibile ricevuta dal backend.");
       }
 
       const battute = computeBattute(scenes);
@@ -351,6 +481,9 @@ export default function App() {
       setStepStates(completeMap());
       appendLog("success", `Pipeline completa. Scene generate: ${scenes.length}`);
     } catch (error) {
+      if (activeRequestIdRef.current !== requestPayload.requestId) {
+        return;
+      }
       stopPipelineAnimation();
       const stage = activeStageRef.current;
       const errorMap = toStateMap(stage);
@@ -361,6 +494,11 @@ export default function App() {
       setCurrentStep("Errore backend");
       setStepStates(errorMap);
       appendLog("error", `Errore pipeline: ${getErrorMessage(error)}`);
+    } finally {
+      if (activeRequestIdRef.current === requestPayload.requestId) {
+        activeRequestIdRef.current = null;
+        requestInFlightRef.current = false;
+      }
     }
   };
 
@@ -384,7 +522,7 @@ export default function App() {
     setDemoMode(Boolean(nextSettings.demoMode));
     appendLog(
       "info",
-      `Settings salvati. DemoMode=${nextSettings.demoMode ? "ON" : "OFF"} Timeout=${nextSettings.requestTimeoutMs}ms`,
+      `Settings salvati. DemoMode=${nextSettings.demoMode ? "ON" : "OFF"} Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl}`,
     );
   };
 
@@ -406,13 +544,20 @@ export default function App() {
         JSON.stringify(
           {
             pdf: { name: pdf.name, pages: pdf.pages, words: pdf.words },
+            analysis,
             selectedStyle,
             selectedVideoPreset,
             demoMode,
             integrationSettings,
-            pipeline,
+            pipeline: {
+              status: pipeline.status,
+              currentStep: pipeline.currentStep,
+              progress: pipeline.progress,
+            },
             stats,
             storyboardScenes: output.storyboard.length,
+            hasPlayableAudio: Boolean(output.audioUrl || output.storyboard.some((scene) => scene.audioPath)),
+            logCount: logs.length,
             exportedAt: new Date().toISOString(),
           },
           null,
@@ -441,7 +586,11 @@ export default function App() {
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         demoMode={demoMode}
-        integrationSettings={integrationSettings}
+        integrationSettings={{
+          webhookUrl: integrationSettings.webhookUrl || DEFAULT_WEBHOOK_URL,
+          requestTimeoutMs:
+            integrationSettings.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS,
+        }}
         onSave={handleSaveSettings}
       />
 
