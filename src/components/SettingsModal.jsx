@@ -1,4 +1,4 @@
-import { RotateCcw, Save, X } from "lucide-react";
+import { LoaderCircle, PlugZap, RotateCcw, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   DEFAULT_REQUEST_TIMEOUT_MS,
@@ -9,7 +9,14 @@ const DEFAULT_SETTINGS = {
   webhookUrl: DEFAULT_WEBHOOK_URL,
   requestTimeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
   demoMode: false,
+  demoScenario: "fast-success",
 };
+
+const DEMO_SCENARIOS = [
+  { id: "fast-success", label: "Fast Success" },
+  { id: "slow-success", label: "Slow Success" },
+  { id: "degraded-media", label: "Degraded Media" },
+];
 
 function validateFormState(formState) {
   const errors = {};
@@ -42,15 +49,20 @@ export default function SettingsModal({
   open,
   onClose,
   demoMode,
+  demoScenario,
   integrationSettings,
   onSave,
+  onTestConnection,
 }) {
   const [formState, setFormState] = useState({
     webhookUrl: integrationSettings.webhookUrl,
     requestTimeoutMs: integrationSettings.requestTimeoutMs,
     demoMode,
+    demoScenario,
   });
   const [errors, setErrors] = useState({});
+  const [connectionState, setConnectionState] = useState("idle");
+  const [connectionMessage, setConnectionMessage] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -58,9 +70,12 @@ export default function SettingsModal({
       webhookUrl: integrationSettings.webhookUrl,
       requestTimeoutMs: integrationSettings.requestTimeoutMs,
       demoMode,
+      demoScenario,
     });
     setErrors({});
-  }, [open, integrationSettings, demoMode]);
+    setConnectionState("idle");
+    setConnectionMessage("");
+  }, [open, integrationSettings, demoMode, demoScenario]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -102,9 +117,39 @@ export default function SettingsModal({
       webhookUrl: formState.webhookUrl.trim(),
       requestTimeoutMs: Number(formState.requestTimeoutMs),
       demoMode: Boolean(formState.demoMode),
+      demoScenario: formState.demoScenario,
     });
     onClose();
   };
+
+  const handleTestConnection = async () => {
+    const nextErrors = validateFormState(formState);
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      setConnectionState("error");
+      setConnectionMessage("Correggi i campi prima del test.");
+      return;
+    }
+
+    setConnectionState("testing");
+    setConnectionMessage("Verifica connessione in corso...");
+
+    const result = await onTestConnection?.({
+      webhookUrl: formState.webhookUrl.trim(),
+      requestTimeoutMs: Number(formState.requestTimeoutMs),
+    });
+
+    setConnectionState(result?.state || "degraded");
+    setConnectionMessage(result?.message || "Reachable, contract health non esplicito.");
+  };
+
+  const connectionTone = {
+    idle: "text-textMuted",
+    testing: "text-accentInfo",
+    success: "text-accentSuccess",
+    degraded: "text-accentWarning",
+    error: "text-red-300",
+  }[connectionState];
 
   if (!open) return null;
 
@@ -177,6 +222,28 @@ export default function SettingsModal({
             />
             <span className="text-sm text-textSecondary">Demo mode (usa fallback locale)</span>
           </label>
+
+          {formState.demoMode ? (
+            <label className="block">
+              <span className="mb-1 block text-xs text-textSecondary">Demo Scenario</span>
+              <select
+                value={formState.demoScenario}
+                onChange={(event) => updateField("demoScenario", event.target.value)}
+                className="w-full rounded-md border border-borderPrimary bg-bgPrimary/60 px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary"
+              >
+                {DEMO_SCENARIOS.map((scenario) => (
+                  <option key={scenario.id} value={scenario.id}>
+                    {scenario.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          <div className="rounded-md border border-borderPrimary bg-bgPrimary/35 px-3 py-2">
+            <p className="text-xs text-textSecondary">Connection Check</p>
+            <p className={`mt-1 text-[11px] ${connectionTone}`}>{connectionMessage || "Nessun test eseguito."}</p>
+          </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between">
@@ -186,19 +253,36 @@ export default function SettingsModal({
             onClick={() => {
               setFormState(DEFAULT_SETTINGS);
               setErrors({});
+              setConnectionState("idle");
+              setConnectionMessage("");
             }}
           >
             <RotateCcw size={12} />
             RESTORE DEFAULTS
           </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-md border border-accentPrimary/70 bg-accentPrimary/15 px-3 py-2 text-xs font-semibold tracking-[0.05em] text-textPrimary hover:bg-accentPrimary/25"
-            onClick={handleSave}
-          >
-            <Save size={13} />
-            SAVE
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md border border-borderAccent/80 bg-bgPrimary/55 px-3 py-2 text-[11px] font-semibold tracking-[0.05em] text-textSecondary hover:border-borderAccent hover:bg-bgHover hover:text-textPrimary disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={handleTestConnection}
+              disabled={connectionState === "testing"}
+            >
+              {connectionState === "testing" ? (
+                <LoaderCircle size={12} className="animate-spin" />
+              ) : (
+                <PlugZap size={12} />
+              )}
+              TEST CONNECTION
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md border border-accentPrimary/70 bg-accentPrimary/15 px-3 py-2 text-xs font-semibold tracking-[0.05em] text-textPrimary hover:bg-accentPrimary/25"
+              onClick={handleSave}
+            >
+              <Save size={13} />
+              SAVE
+            </button>
+          </div>
         </div>
       </div>
     </div>

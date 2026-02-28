@@ -9,12 +9,23 @@ const STATUS_MAP = {
 
 export default function Header({
   status,
+  runtimeMode = "live",
   onOpenSettings,
   onToggleExportMenu,
   isExportMenuOpen = false,
   canExport = false,
 }) {
   const statusData = STATUS_MAP[status] || STATUS_MAP.idle;
+  const modePill =
+    runtimeMode === "demo"
+      ? {
+          label: "LOCAL DEMO",
+          className: "border-cyan-400/35 bg-cyan-400/10 text-cyan-200",
+        }
+      : {
+          label: "LIVE n8n",
+          className: "border-emerald-400/35 bg-emerald-400/10 text-emerald-200",
+        };
 
   return (
     <header className="h-[60px] border-b border-borderPrimary bg-bgSecondary/90 px-5">
@@ -34,6 +45,11 @@ export default function Header({
             <span className={`status-dot ${statusData.color}`} />
             <span className="text-textSecondary">{statusData.label}</span>
           </div>
+          <span
+            className={`rounded-full border px-2 py-1 text-[10px] font-semibold tracking-[0.08em] ${modePill.className}`}
+          >
+            {modePill.label}
+          </span>
           <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-1 text-[10px] font-semibold tracking-[0.08em] text-amber-300">
             DEMO WIP
           </span>
@@ -41,6 +57,7 @@ export default function Header({
             type="button"
             onClick={onOpenSettings}
             data-settings-toggle="true"
+            aria-label="Settings"
             className="rounded-md border border-borderPrimary bg-bgTertiary p-2 text-textSecondary transition hover:bg-bgHover hover:text-textPrimary"
           >
             <Settings size={16} />
@@ -49,6 +66,7 @@ export default function Header({
             type="button"
             onClick={onToggleExportMenu}
             data-export-toggle="true"
+            aria-label="Download"
             disabled={!canExport}
             className={`rounded-md border p-2 transition ${
               canExport

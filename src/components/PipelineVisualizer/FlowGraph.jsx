@@ -6,12 +6,12 @@ const NODE_SIZE = { width: 170, height: 92, radius: 16 };
 
 const NODE_BASE = [
   { id: "input", label: ["INPUT", "PDF"], x: 500, y: 126 },
-  { id: "parsing", label: ["PARSING"], x: 500, y: 236 },
+  { id: "parsing", label: ["PARSE", "REQUEST"], x: 500, y: 236 },
   { id: "llm", label: ["LLM", "ANALYSIS"], x: 500, y: 346 },
-  { id: "style", label: ["STYLE", "ENGINE"], x: 350, y: 462 },
-  { id: "voice", label: ["VOICE", "SYNTHESIS"], x: 650, y: 462 },
+  { id: "style", label: ["STYLE", "PROMPT"], x: 350, y: 462 },
+  { id: "voice", label: ["VOICE", "SYNTH"], x: 650, y: 462 },
   { id: "image", label: ["IMAGE", "GEN"], x: 350, y: 576 },
-  { id: "output", label: ["OUTPUT"], x: 500, y: 642 },
+  { id: "output", label: ["AGGREGATE", "OUTPUT"], x: 500, y: 642 },
 ];
 
 const EDGES = [

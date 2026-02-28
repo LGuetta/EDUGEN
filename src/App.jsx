@@ -15,6 +15,8 @@ import {
   DEFAULT_WEBHOOK_URL,
   buildN8nPayload,
   normalizeInboundLogs,
+  normalizeInboundWarnings,
+  isValidProgressTrace,
   validateN8nResponseShape,
 } from "./utils/contract";
 import { createDemoNarrationUrl, createDemoStoryboard, STYLE_LABELS } from "./utils/demoMode";
@@ -22,14 +24,14 @@ import { titleCase } from "./utils/formatters";
 
 const STEP_LABELS = {
   input: "PDF Input",
-  parsing: "Parsing contenuto",
+  parsing: "Parse request",
   llm: "Analisi LLM",
   parallel: "Style + Voice in parallelo",
   image: "Generazione immagini",
-  output: "Aggregazione output",
+  output: "Aggregate output",
 };
 
-const PARALLEL_STAGES = [
+const SYNTHETIC_STAGE_SEQUENCE = [
   { id: "input", complete: [], active: ["input"], progress: 8 },
   { id: "parsing", complete: ["input"], active: ["parsing"], progress: 18 },
   { id: "llm", complete: ["input", "parsing"], active: ["llm"], progress: 34 },
@@ -42,6 +44,40 @@ const PARALLEL_STAGES = [
     progress: 90,
   },
 ];
+
+const TRACE_STAGE_META = {
+  input: { complete: [], active: ["input"], progress: 8, label: "PDF Input" },
+  parsing: { complete: ["input"], active: ["parsing"], progress: 18, label: "Parse request" },
+  llm: { complete: ["input", "parsing"], active: ["llm"], progress: 34, label: "Analisi LLM" },
+  style: {
+    complete: ["input", "parsing", "llm"],
+    active: ["style", "voice"],
+    progress: 56,
+    label: "Style + Voice in parallelo",
+  },
+  voice: {
+    complete: ["input", "parsing", "llm"],
+    active: ["style", "voice"],
+    progress: 56,
+    label: "Style + Voice in parallelo",
+  },
+  image: {
+    complete: ["input", "parsing", "llm", "style", "voice"],
+    active: ["image"],
+    progress: 76,
+    label: "Generazione immagini",
+  },
+  output: {
+    complete: ["input", "parsing", "llm", "style", "voice", "image"],
+    active: ["output"],
+    progress: 90,
+    label: "Aggregate output",
+  },
+};
+
+function sleep(duration) {
+  return new Promise((resolve) => window.setTimeout(resolve, duration));
+}
 
 function computeBattute(scenes) {
   return scenes.reduce((total, scene) => total + (scene.narrationScript?.length || 0), 0);
@@ -76,6 +112,27 @@ function toStateMap(stage) {
   return map;
 }
 
+function createFallbackWarning(sceneNumber, code, message, severity = "warning") {
+  return {
+    id: `${code}_${sceneNumber}_${Math.random().toString(16).slice(2, 7)}`,
+    code,
+    message,
+    sceneNumber,
+    severity,
+    source: "ui-fallback",
+  };
+}
+
+function dedupeWarnings(warnings) {
+  const seen = new Set();
+  return warnings.filter((warning) => {
+    const key = `${warning.code}|${warning.sceneNumber || "na"}|${warning.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
   const fallback = createDemoStoryboard(style);
   const warnings = [];
@@ -92,19 +149,41 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
     const resolvedAudioPath = scene.audioPath || fallbackAudioUrl || null;
 
     if (!hasTitle) {
-      warnings.push(`Scene ${sceneNumber} missing title, using fallback label.`);
+      warnings.push(
+        createFallbackWarning(
+          sceneNumber,
+          "SCENE_TITLE_MISSING",
+          `Scene ${sceneNumber} missing title, using fallback label.`,
+        ),
+      );
     }
     if (!hasNarration) {
-      warnings.push(`Scene ${sceneNumber} missing narrationScript, using placeholder copy.`);
+      warnings.push(
+        createFallbackWarning(
+          sceneNumber,
+          "SCENE_SCRIPT_MISSING",
+          `Scene ${sceneNumber} missing narrationScript, using placeholder copy.`,
+        ),
+      );
     }
     if (!hasImage) {
-      warnings.push(`Scene ${sceneNumber} missing imagePath, using generated placeholder.`);
+      warnings.push(
+        createFallbackWarning(
+          sceneNumber,
+          "SCENE_IMAGE_MISSING",
+          `Scene ${sceneNumber} missing imagePath, using generated placeholder.`,
+        ),
+      );
     }
     if (!hasAudio) {
       warnings.push(
-        resolvedAudioPath
-          ? `Scene ${sceneNumber} missing audioPath, using fallback audio.`
-          : `Scene ${sceneNumber} missing audioPath, no audio available.`,
+        createFallbackWarning(
+          sceneNumber,
+          "SCENE_AUDIO_MISSING",
+          resolvedAudioPath
+            ? `Scene ${sceneNumber} missing audioPath, using fallback audio.`
+            : `Scene ${sceneNumber} missing audioPath, no audio available.`,
+        ),
       );
     }
     if (resolvedAudioPath) {
@@ -132,21 +211,54 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
   };
 }
 
-function buildDemoResponse(selectedStyle, pdfName, requestId) {
+function buildDemoProgressTrace() {
+  return [
+    { stage: "input", status: "complete", time: "17:23:45" },
+    { stage: "parsing", status: "complete", time: "17:23:46" },
+    { stage: "llm", status: "complete", time: "17:23:47" },
+    { stage: "style", status: "complete", time: "17:23:48" },
+    { stage: "voice", status: "complete", time: "17:23:49" },
+    { stage: "image", status: "complete", time: "17:23:50" },
+    { stage: "output", status: "complete", time: "17:23:51" },
+  ];
+}
+
+function buildDemoResponse(selectedStyle, pdfName, requestId, demoScenario) {
   const demoScenes = createDemoStoryboard(selectedStyle);
   const demoAudioUrl = createDemoNarrationUrl();
-  const scenes = demoScenes.map((scene) => ({
-    sceneNumber: scene.number,
-    title: scene.title,
-    narrationScript: `Script demo scena ${scene.number} per ${pdfName}. Contenuto narrativo generato a scopo di presentazione.`,
-    imagePath: scene.imageUrl,
-    audioPath: demoAudioUrl,
-    duration: 20,
-  }));
+  const warnings = [];
+  const scenes = demoScenes.map((scene) => {
+    if (demoScenario === "degraded-media" && scene.number % 2 === 0) {
+      warnings.push({
+        code: "SCENE_AUDIO_MISSING",
+        message: `Scene ${scene.number} missing audioPath`,
+        sceneNumber: scene.number,
+        severity: "warning",
+      });
+      warnings.push({
+        code: "SCENE_IMAGE_MISSING",
+        message: `Scene ${scene.number} missing imagePath`,
+        sceneNumber: scene.number,
+        severity: "warning",
+      });
+    }
+
+    return {
+      sceneNumber: scene.number,
+      title: scene.title,
+      narrationScript: `Script demo scena ${scene.number} per ${pdfName}. Contenuto narrativo generato a scopo di presentazione.`,
+      imagePath:
+        demoScenario === "degraded-media" && scene.number % 2 === 0 ? "" : scene.imageUrl,
+      audioPath:
+        demoScenario === "degraded-media" && scene.number % 2 === 0 ? "" : demoAudioUrl,
+      duration: 20,
+    };
+  });
 
   return {
     success: true,
     requestId,
+    mode: "demo",
     data: {
       storyboard: {
         title: "Storyboard Demo",
@@ -155,6 +267,7 @@ function buildDemoResponse(selectedStyle, pdfName, requestId) {
         scenes,
       },
     },
+    warnings,
     logs: [
       {
         time: new Date().toLocaleTimeString("it-IT", { hour12: false }),
@@ -162,6 +275,7 @@ function buildDemoResponse(selectedStyle, pdfName, requestId) {
         message: "Modalità demo locale attiva.",
       },
     ],
+    progressTrace: buildDemoProgressTrace(),
     demoAudioUrl,
   };
 }
@@ -184,16 +298,21 @@ export default function App() {
     selectedVideoPreset,
     pipeline,
     output,
+    warnings,
     logs,
     stats,
     isLogCollapsed,
     demoMode,
+    demoScenario,
     integrationSettings,
+    lastRequestPayload,
+    lastResponsePayload,
     setPdf,
     clearPdf,
     setAnalysis,
     setSelectedStyle,
     setSelectedVideoPreset,
+    setWarnings,
     setPipelineStatus,
     setCurrentStep,
     setProgress,
@@ -208,15 +327,18 @@ export default function App() {
     incrementElapsedTime,
     resetPipelineRun,
     setDemoMode,
+    setDemoScenario,
     setIntegrationSettings,
+    setLastRequestPayload,
+    setLastResponsePayload,
   } = useAppStore();
 
   const { parsePDF } = usePDFParser();
-  const { processDocument } = useN8nPipeline();
+  const { processDocument, testConnection } = useN8nPipeline();
 
   const animationIntervalRef = useRef(null);
   const generatedAudioRef = useRef(null);
-  const activeStageRef = useRef(PARALLEL_STAGES[0]);
+  const activeStageRef = useRef(SYNTHETIC_STAGE_SEQUENCE[0]);
   const requestInFlightRef = useRef(false);
   const activeRequestIdRef = useRef(null);
 
@@ -278,22 +400,64 @@ export default function App() {
     }
   };
 
+  const applyVisualStage = (stage) => {
+    activeStageRef.current = stage;
+    setStepStates(toStateMap(stage));
+    setCurrentStep(STEP_LABELS[stage.id] || stage.label || "Processing");
+    setProgress(Math.min(stage.progress, 90));
+  };
+
   const startPipelineAnimation = () => {
     stopPipelineAnimation();
     let stageIndex = 0;
-    const applyStage = (index) => {
-      const stage = PARALLEL_STAGES[index];
-      activeStageRef.current = stage;
-      setStepStates(toStateMap(stage));
-      setCurrentStep(STEP_LABELS[stage.id]);
-      setProgress(stage.progress);
-    };
-    applyStage(stageIndex);
+    applyVisualStage(SYNTHETIC_STAGE_SEQUENCE[stageIndex]);
 
     animationIntervalRef.current = window.setInterval(() => {
-      stageIndex = Math.min(stageIndex + 1, PARALLEL_STAGES.length - 1);
-      applyStage(stageIndex);
+      stageIndex = Math.min(stageIndex + 1, SYNTHETIC_STAGE_SEQUENCE.length - 1);
+      applyVisualStage(SYNTHETIC_STAGE_SEQUENCE[stageIndex]);
     }, 1400);
+  };
+
+  const applyBackendProgressTrace = async (trace) => {
+    if (!isValidProgressTrace(trace)) return false;
+
+    stopPipelineAnimation();
+
+    for (const entry of trace) {
+      const meta = TRACE_STAGE_META[entry.stage];
+      if (!meta) continue;
+
+      const stage = {
+        id: entry.stage,
+        complete: meta.complete,
+        active: entry.status === "error" ? meta.active : meta.active,
+        progress: meta.progress,
+        label: meta.label,
+      };
+
+      if (entry.status === "complete") {
+        const completeIds = Array.from(new Set([...meta.complete, entry.stage]));
+        activeStageRef.current = { ...stage, complete: completeIds, active: [] };
+        setStepStates(toStateMap({ ...stage, complete: completeIds, active: [] }));
+        setCurrentStep(meta.label);
+        setProgress(Math.min(meta.progress, 90));
+      } else if (entry.status === "error") {
+        const errorMap = toStateMap(stage);
+        meta.active.forEach((id) => {
+          errorMap[id] = "error";
+        });
+        activeStageRef.current = stage;
+        setStepStates(errorMap);
+        setCurrentStep(meta.label);
+        setProgress(Math.min(meta.progress, 90));
+      } else {
+        applyVisualStage(stage);
+      }
+
+      await sleep(140);
+    }
+
+    return true;
   };
 
   const handleFilePicked = async (file) => {
@@ -354,6 +518,7 @@ export default function App() {
     }
 
     resetPipelineRun();
+    setWarnings([]);
     resetElapsedTime();
     setPipelineStatus("processing");
     setCurrentStep("Invio richiesta n8n");
@@ -367,6 +532,8 @@ export default function App() {
     });
     requestInFlightRef.current = true;
     activeRequestIdRef.current = requestPayload.requestId;
+    setLastRequestPayload(requestPayload);
+    setLastResponsePayload(null);
 
     appendLog("info", `Richiesta accodata. requestId=${requestPayload.requestId}`);
 
@@ -376,11 +543,22 @@ export default function App() {
     );
 
     startPipelineAnimation();
+    let responsePayload = null;
 
     try {
-      const response = demoMode
-        ? buildDemoResponse(selectedStyle, pdf.name, requestPayload.requestId)
-        : await processDocument(requestPayload, {
+      let response;
+      if (demoMode) {
+        if (demoScenario === "slow-success") {
+          await sleep(1800);
+        }
+        response = buildDemoResponse(
+          selectedStyle,
+          pdf.name,
+          requestPayload.requestId,
+          demoScenario,
+        );
+      } else {
+        response = await processDocument(requestPayload, {
             webhookUrl: integrationSettings.webhookUrl,
             timeoutMs: integrationSettings.requestTimeoutMs,
             onAttempt: ({ attempt, totalAttempts, retrying, webhookUrl, timeoutMs }) => {
@@ -400,6 +578,10 @@ export default function App() {
               appendLog("info", `Response ricevuta da n8n (HTTP ${status}, attempt ${attempt})`);
             },
           });
+      }
+
+      responsePayload = response;
+      setLastResponsePayload(response);
 
       if (demoMode) {
         appendLog("info", "Demo mode attivo: webhook bypass, uso response locale deterministica.");
@@ -415,18 +597,13 @@ export default function App() {
         throw new Error(response?.message || "Il backend ha risposto con success=false");
       }
 
-      const responseRequestId = response?.requestId || response?.data?.requestId || null;
-      if (responseRequestId && responseRequestId !== requestPayload.requestId) {
+      const responseRequestId = response?.requestId || null;
+      if (responseRequestId !== requestPayload.requestId) {
         throw new Error(
           `requestId mismatch: atteso ${requestPayload.requestId}, ricevuto ${responseRequestId}`,
         );
       }
-      appendLog(
-        "info",
-        responseRequestId
-          ? `Response associata correttamente a requestId=${responseRequestId}`
-          : `Response senza requestId echo: associata alla richiesta attiva ${requestPayload.requestId}`,
-      );
+      appendLog("info", `Response associata correttamente a requestId=${responseRequestId}`);
       appendLog("info", "Validazione response in corso...");
 
       const validation = validateN8nResponseShape(response);
@@ -443,19 +620,22 @@ export default function App() {
       if (inboundLogs.length) {
         appendLogs(inboundLogs);
       }
+      const inboundWarnings = normalizeInboundWarnings(response?.warnings);
 
       const storyboardData = response?.data?.storyboard;
       const rawScenes = storyboardData?.scenes || [];
       const fallbackAudioUrl = response?.demoAudioUrl || null;
       const {
         scenes,
-        warnings,
+        warnings: fallbackWarnings,
         playableAudioCount,
       } = normalizeBackendScenes(rawScenes, selectedStyle, fallbackAudioUrl);
       if (!scenes.length) {
         throw new Error("Nessuna scena ricevuta dal backend.");
       }
-      warnings.forEach((message) => appendLog("warning", message));
+      const mergedWarnings = dedupeWarnings([...inboundWarnings, ...fallbackWarnings]);
+      setWarnings(mergedWarnings);
+      mergedWarnings.forEach((warning) => appendLog(warning.severity, warning.message));
       if (!playableAudioCount) {
         appendLog("warning", "Nessuna traccia audio riproducibile ricevuta dal backend.");
       }
@@ -463,6 +643,10 @@ export default function App() {
       const battute = computeBattute(scenes);
       const totalDuration =
         storyboardData?.totalDuration || Math.max(1, Math.round((battute / 900) * 60));
+
+      if (isValidProgressTrace(response?.progressTrace)) {
+        await applyBackendProgressTrace(response.progressTrace);
+      }
 
       setOutput({
         storyboard: scenes,
@@ -494,6 +678,14 @@ export default function App() {
       setCurrentStep("Errore backend");
       setStepStates(errorMap);
       appendLog("error", `Errore pipeline: ${getErrorMessage(error)}`);
+      setWarnings([]);
+      if (!responsePayload) {
+        setLastResponsePayload({
+          requestId: requestPayload.requestId,
+          mode: demoMode ? "demo" : "live",
+          error: getErrorMessage(error),
+        });
+      }
     } finally {
       if (activeRequestIdRef.current === requestPayload.requestId) {
         activeRequestIdRef.current = null;
@@ -520,11 +712,18 @@ export default function App() {
       requestTimeoutMs: nextSettings.requestTimeoutMs,
     });
     setDemoMode(Boolean(nextSettings.demoMode));
+    setDemoScenario(nextSettings.demoScenario || "fast-success");
     appendLog(
       "info",
-      `Settings salvati. DemoMode=${nextSettings.demoMode ? "ON" : "OFF"} Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl}`,
+      `Settings salvati. DemoMode=${nextSettings.demoMode ? "ON" : "OFF"} Scenario=${nextSettings.demoScenario || "fast-success"} Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl}`,
     );
   };
+
+  const handleTestConnection = async (settings) =>
+    testConnection({
+      webhookUrl: settings.webhookUrl,
+      timeoutMs: settings.requestTimeoutMs,
+    });
 
   const handleExport = (kind) => {
     if (kind === "storyboard") {
@@ -543,18 +742,22 @@ export default function App() {
         "edugen-session.json",
         JSON.stringify(
           {
-            pdf: { name: pdf.name, pages: pdf.pages, words: pdf.words },
+            pdf: { name: pdf.name, pages: pdf.pages, words: pdf.words, size: pdf.size },
             analysis,
             selectedStyle,
             selectedVideoPreset,
             demoMode,
+            demoScenario,
             integrationSettings,
+            warnings,
             pipeline: {
               status: pipeline.status,
               currentStep: pipeline.currentStep,
               progress: pipeline.progress,
             },
             stats,
+            lastRequestPayload,
+            lastResponsePayload,
             storyboardScenes: output.storyboard.length,
             hasPlayableAudio: Boolean(output.audioUrl || output.storyboard.some((scene) => scene.audioPath)),
             logCount: logs.length,
@@ -573,6 +776,7 @@ export default function App() {
     <div className="relative flex h-full flex-col">
       <Header
         status={pipeline.status}
+        runtimeMode={demoMode ? "demo" : "live"}
         onOpenSettings={() => {
           setIsExportMenuOpen(false);
           setIsSettingsOpen(true);
@@ -586,12 +790,14 @@ export default function App() {
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         demoMode={demoMode}
+        demoScenario={demoScenario}
         integrationSettings={{
           webhookUrl: integrationSettings.webhookUrl || DEFAULT_WEBHOOK_URL,
           requestTimeoutMs:
             integrationSettings.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS,
         }}
         onSave={handleSaveSettings}
+        onTestConnection={handleTestConnection}
       />
 
       <div className="mx-auto h-[calc(100%-60px)] w-full max-w-[1920px] px-4 pb-3 pt-4">
@@ -626,6 +832,7 @@ export default function App() {
               scenes={output.storyboard}
               audioUrl={output.audioUrl}
               loading={pipeline.status === "processing"}
+              warnings={warnings}
             />
           </main>
 

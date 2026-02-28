@@ -1,13 +1,14 @@
 import { create } from "zustand";
+import { DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_WEBHOOK_URL } from "../utils/contract";
 
 const STEP_DEFINITIONS = [
   { id: "input", label: "Input PDF" },
-  { id: "parsing", label: "Parsing" },
+  { id: "parsing", label: "Parse Request" },
   { id: "llm", label: "LLM Analysis" },
-  { id: "style", label: "Style Engine" },
-  { id: "image", label: "Image Generation" },
-  { id: "voice", label: "Voice Synthesis" },
-  { id: "output", label: "Output" },
+  { id: "style", label: "Style Prompt" },
+  { id: "image", label: "Image Gen" },
+  { id: "voice", label: "Voice Synth" },
+  { id: "output", label: "Aggregate Output" },
 ];
 
 const createInitialSteps = () =>
@@ -34,8 +35,8 @@ const defaultStats = {
 };
 
 const defaultIntegrationSettings = {
-  webhookUrl: "http://localhost:5678/webhook/edugen-process",
-  requestTimeoutMs: 60000,
+  webhookUrl: DEFAULT_WEBHOOK_URL,
+  requestTimeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
 };
 
 export const useAppStore = create((set) => ({
@@ -57,12 +58,16 @@ export const useAppStore = create((set) => ({
     steps: createInitialSteps(),
   },
   output: defaultOutput,
+  warnings: [],
   logs: [],
   stats: defaultStats,
   isLogCollapsed: false,
   demoMode: false,
+  demoScenario: "fast-success",
   integrationSettings: defaultIntegrationSettings,
   executionId: null,
+  lastRequestPayload: null,
+  lastResponsePayload: null,
 
   setPdf: (pdf) => set({ pdf }),
   clearPdf: () =>
@@ -77,11 +82,15 @@ export const useAppStore = create((set) => ({
         steps: createInitialSteps(),
       },
       stats: defaultStats,
+      warnings: [],
       logs: [],
+      lastRequestPayload: null,
+      lastResponsePayload: null,
     }),
   setAnalysis: (analysis) => set({ analysis }),
   setSelectedStyle: (selectedStyle) => set({ selectedStyle }),
   setSelectedVideoPreset: (selectedVideoPreset) => set({ selectedVideoPreset }),
+  setWarnings: (warnings) => set({ warnings }),
   setPipelineStatus: (status) =>
     set((state) => ({
       pipeline: { ...state.pipeline, status },
@@ -164,6 +173,7 @@ export const useAppStore = create((set) => ({
       stats: { ...state.stats, elapsedTime: state.stats.elapsedTime + 1 },
     })),
   setDemoMode: (demoMode) => set({ demoMode }),
+  setDemoScenario: (demoScenario) => set({ demoScenario }),
   setIntegrationSettings: (integrationUpdate) =>
     set((state) => ({
       integrationSettings: {
@@ -172,6 +182,8 @@ export const useAppStore = create((set) => ({
       },
     })),
   setExecutionId: (executionId) => set({ executionId }),
+  setLastRequestPayload: (lastRequestPayload) => set({ lastRequestPayload }),
+  setLastResponsePayload: (lastResponsePayload) => set({ lastResponsePayload }),
   resetPipelineRun: () =>
     set({
       pipeline: {
@@ -181,6 +193,7 @@ export const useAppStore = create((set) => ({
         steps: createInitialSteps(),
       },
       output: defaultOutput,
+      warnings: [],
       logs: [],
       stats: defaultStats,
     }),
