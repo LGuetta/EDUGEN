@@ -22,6 +22,7 @@ import {
 import {
   createDemoNarrationUrl,
   createDemoStoryboard,
+  buildDemoTimeline,
   createFallbackDemoPackage,
   STYLE_LABELS,
 } from "./utils/demoMode";
@@ -254,13 +255,7 @@ function buildDemoResponse(selectedStyle, pdfName, requestId, demoScenario) {
       },
     },
     warnings,
-    logs: [
-      {
-        time: new Date().toLocaleTimeString("it-IT", { hour12: false }),
-        type: "info",
-        message: `Modalità demo attiva. Elaborazione locale completata per ${pdfName}.`,
-      },
-    ],
+    logs: [],
     progressTrace: buildDemoProgressTrace(),
     demoAudioUrl,
   };
@@ -504,6 +499,49 @@ export default function App() {
     }, 1400);
   };
 
+  const replayDemoTimeline = async (pdfName) => {
+    stopPipelineAnimation();
+
+    const timeline = buildDemoTimeline({
+      fileName: pdfName,
+      styleLabel,
+      sceneCount: 6,
+    });
+    const speedMultiplier = demoScenario === "slow-success" ? 1 : 0.55;
+    let previousDelay = 0;
+
+    for (const entry of timeline) {
+      const delta = Math.max(120, Math.round((entry.delay - previousDelay) * speedMultiplier));
+      previousDelay = entry.delay;
+      await sleep(delta);
+
+      if (!requestInFlightRef.current || activeRequestIdRef.current === null) {
+        return;
+      }
+
+      if (!entry.isFinal) {
+        appendLog(entry.type, entry.message);
+      }
+      if (entry.currentStep) {
+        setCurrentStep(entry.currentStep);
+      }
+      if (entry.stepStates) {
+        setStepStates(entry.stepStates);
+      }
+      if (typeof entry.progress === "number") {
+        setProgress(Math.min(entry.progress, 96));
+      }
+      if (typeof entry.tokens === "number" || typeof entry.scenesGenerated === "number") {
+        setStats({
+          tokens: typeof entry.tokens === "number" ? entry.tokens : 0,
+          scenesGenerated:
+            typeof entry.scenesGenerated === "number" ? entry.scenesGenerated : 0,
+          battute: 0,
+        });
+      }
+    }
+  };
+
   const applyBackendProgressTrace = async (trace) => {
     if (!isValidProgressTrace(trace)) return false;
 
@@ -625,20 +663,19 @@ export default function App() {
 
     appendLog("info", `Richiesta accodata. requestId=${requestPayload.requestId}`);
 
-    appendLog(
-      "info",
-      `Invio payload a n8n requestId=${requestPayload.requestId} style=${requestPayload.styleModule} videoPreset=${requestPayload.videoPreset}`,
-    );
-
-    startPipelineAnimation();
+    if (!demoMode) {
+      appendLog(
+        "info",
+        `Invio payload a n8n requestId=${requestPayload.requestId} style=${requestPayload.styleModule} videoPreset=${requestPayload.videoPreset}`,
+      );
+      startPipelineAnimation();
+    }
     let responsePayload = null;
 
     try {
       let response;
       if (demoMode) {
-        if (demoScenario === "slow-success") {
-          await sleep(1800);
-        }
+        await replayDemoTimeline(pdf.name);
         response = buildDemoResponse(
           selectedStyle,
           pdf.name,
@@ -670,10 +707,6 @@ export default function App() {
 
       responsePayload = response;
       setLastResponsePayload(response);
-
-      if (demoMode) {
-        appendLog("info", "Demo mode attivo: webhook bypass, uso response locale deterministica.");
-      }
 
       if (activeRequestIdRef.current !== requestPayload.requestId) {
         return;
