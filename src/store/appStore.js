@@ -5,9 +5,13 @@ const STEP_DEFINITIONS = [
   { id: "input", label: "Input PDF" },
   { id: "parsing", label: "Parse Request" },
   { id: "llm", label: "LLM Analysis" },
+  { id: "archive", label: "Archivio Vivo" },
   { id: "style", label: "Style Prompt" },
+  { id: "lora", label: "LoRA Select" },
+  { id: "controlnet", label: "ControlNet" },
   { id: "image", label: "Image Gen" },
   { id: "voice", label: "Voice Synth" },
+  { id: "video", label: "Video Compose" },
   { id: "output", label: "Aggregate Output" },
 ];
 
@@ -25,6 +29,8 @@ const defaultOutput = {
   storyboard: [],
   audioUrl: null,
   audioDuration: 0,
+  videoUrl: null,
+  videoPosterUrl: null,
 };
 
 const defaultStats = {
@@ -65,6 +71,11 @@ export const useAppStore = create((set) => ({
   isLogCollapsed: false,
   demoMode: false,
   demoScenario: "fast-success",
+  customPrompt: "",
+  archiveInsights: [],
+  demoMediaHistory: {},
+  demoRunCount: 0,
+  lastDemoTheme: "grain-cycle",
   integrationSettings: defaultIntegrationSettings,
   executionId: null,
   lastRequestPayload: null,
@@ -87,11 +98,21 @@ export const useAppStore = create((set) => ({
       logs: [],
       lastRequestPayload: null,
       lastResponsePayload: null,
+      archiveInsights: [],
     }),
   setAnalysis: (analysis) => set({ analysis }),
   setSelectedStyle: (selectedStyle) => set({ selectedStyle }),
   setSelectedVideoPreset: (selectedVideoPreset) => set({ selectedVideoPreset }),
   setWarnings: (warnings) => set({ warnings }),
+  setCustomPrompt: (customPrompt) => set({ customPrompt }),
+  setArchiveInsights: (archiveInsights) => set({ archiveInsights }),
+  setDemoMediaHistory: (demoMediaHistory) => set({ demoMediaHistory }),
+  resetDemoMediaHistory: () => set({ demoMediaHistory: {} }),
+  incrementDemoRunCount: () =>
+    set((state) => ({
+      demoRunCount: state.demoRunCount + 1,
+    })),
+  setLastDemoTheme: (lastDemoTheme) => set({ lastDemoTheme }),
   setPipelineStatus: (status) =>
     set((state) => ({
       pipeline: { ...state.pipeline, status },
@@ -161,6 +182,10 @@ export const useAppStore = create((set) => ({
   clearLogs: () => set({ logs: [] }),
   toggleLogCollapsed: () => set((state) => ({ isLogCollapsed: !state.isLogCollapsed })),
   setOutput: (output) => set({ output }),
+  setVideoUrl: (videoUrl) =>
+    set((state) => ({
+      output: { ...state.output, videoUrl },
+    })),
   setStats: (statsUpdate) =>
     set((state) => ({
       stats: { ...state.stats, ...statsUpdate },
@@ -197,5 +222,6 @@ export const useAppStore = create((set) => ({
       warnings: [],
       logs: [],
       stats: defaultStats,
+      archiveInsights: [],
     }),
 }));

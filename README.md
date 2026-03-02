@@ -5,24 +5,23 @@ EDUGEN AI Studio e una UI React/Vite pensata per trasformare contenuti PDF educa
 - storyboard
 - immagini di scena
 - narrazione audio
+- output video demo
 
-Il progetto oggi supporta due percorsi operativi distinti:
+Il progetto oggi supporta due percorsi distinti:
 
 - `LIVE n8n`: usa il backend reale
 - `Demo mode`: usa un percorso locale deterministico pensato per la presentazione
 
-Questo README descrive lo stato attuale effettivo del progetto. Se qualche documento secondario nel repo descrive iterazioni precedenti, fai riferimento prima a questo file.
+Questo README descrive il comportamento attuale effettivo del progetto. Se altri documenti nel repo divergono, fai riferimento prima a questo file.
 
 ## Avvio rapido
-
-Installazione e sviluppo locale:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Build di produzione:
+Build e preview locale:
 
 ```bash
 npm run build
@@ -43,26 +42,39 @@ E il percorso reale end-to-end.
 
 - usa il webhook configurato nelle `Settings`
 - usa il PDF caricato come input reale
-- invia il contenuto del PDF in base64 al backend
+- invia al backend il contenuto del PDF in base64
 - dipende dai servizi locali corretti
-- e la modalita da usare per testare il flusso vero
+- e la modalita da usare per testare il flusso reale
 
 Per il funzionamento completo servono:
 
 - n8n locale attivo
 - servizio locale di estrazione testo PDF attivo
-- opzionalmente Voicebox per la generazione audio
+- opzionalmente Voicebox per l'audio
 
 ### Demo mode
 
-E la modalita locale di presentazione.
+E il percorso locale di presentazione.
 
 - non chiama n8n
+- non chiama servizi esterni
 - ignora il PDF caricato per la generazione effettiva
-- usa un percorso locale deterministico
-- e pensata come modalita stabile per la demo cliente
+- usa un pacchetto demo locale deterministico
+- e pensata come modalita stabile per la presentazione cliente
 
-Nel comportamento attuale del progetto, `Demo mode` usa un pacchetto locale predefinito per testo, immagini e audio. Concettualmente non e la stessa cosa di un fallback automatico del backend, ma in pratica oggi coincide con una pipeline locale deterministica completa.
+Nello stato attuale del progetto, `Demo mode` coincide con una pipeline locale completa e controllata:
+
+- 6 scene coerenti
+- immagini locali con varianti
+- audio locale con set multipli
+- video demo locale
+- log plausibili
+- timeline artificiale credibile
+
+### Differenza pratica
+
+- `LIVE n8n`: elabora davvero il PDF caricato
+- `Demo mode`: simula un'elaborazione credibile ma usa asset e contenuti locali controllati
 
 ## Caricare PDF reali
 
@@ -70,9 +82,9 @@ La UI supporta gia l'upload di PDF arbitrari.
 
 Il frontend invia al backend:
 
+- `requestId`
 - `pdfContent`
 - `pdfPath`
-- `requestId`
 - `styleModule`
 - `videoPreset`
 - `sentAt`
@@ -93,13 +105,44 @@ Se il PDF non contiene testo estraibile, il flusso deve fallire in modo esplicit
 
 ### PDF campione
 
-Il pulsante campione nella UI carica un PDF reale utile per testare il flusso di upload senza preparare un file esterno.
+La UI include un PDF campione reale per test rapidi del flusso di upload.
 
-Percorso del file campione incluso nel progetto:
+Percorso:
 
 - `public/demo/edugen-storia-demo.pdf`
 
-Questo file e un PDF vero con testo estraibile, non un placeholder finto.
+Questo file e un PDF vero con testo estraibile, non un placeholder.
+
+## Focus Prompt (demo)
+
+In `Demo mode`, il pannello sinistro include un blocco `FOCUS PROMPT`.
+
+Serve a simulare un filtro di focus sul contenuto del PDF.
+
+Esempio:
+
+- `Concentrati solo sul ciclo del grano`
+
+Nel percorso demo:
+
+- non fa NLP reale sul PDF
+- orienta il tema demo in base a keyword
+- oggi il tema demo base e `grain-cycle`
+
+Questo campo esiste per rendere la demo piu credibile, non per il parsing reale del documento.
+
+## Archivio Vivo (demo)
+
+`Archivio Vivo` e un blocco demo che simula il futuro supporto RAG.
+
+Nel percorso demo:
+
+- appare nel pannello analisi
+- mostra stato `Connesso`
+- aggiunge riferimenti contestuali coerenti
+- influenza la percezione del risultato e dei log
+
+Attualmente e una simulazione UI controllata, non un'integrazione documentale reale.
 
 ## Estrazione testo PDF reale
 
@@ -124,18 +167,13 @@ Questo servizio:
 - tronca il testo a una dimensione sicura per il prompt
 - fallisce in modo esplicito se il testo non e estraibile
 
-Vincoli attuali:
-
-- niente OCR
-- se il PDF e vuoto o non contiene testo estraibile, il run deve fermarsi
-
 Documento di supporto:
 
 - `n8n/PDF_TEXT_EXTRACTION_HELPER.md`
 
 ## Integrazione n8n
 
-Per la UI normale, usa sempre il webhook di produzione:
+Per la UI normale usa sempre il webhook di produzione:
 
 - `http://localhost:5678/webhook/edugen-process`
 
@@ -151,8 +189,6 @@ La response minima accettata dalla UI deve contenere:
 - `requestId`
 - `mode`
 - `data.storyboard.scenes`
-
-Quando la response non rispetta questo contratto, la UI deve bloccare il mapping e trattarla come errore backend.
 
 ### Response minima valida
 
@@ -204,7 +240,7 @@ Voice profile attuale:
 
 ### Vincolo critico lato browser
 
-Per il browser/UI, `audioPath` deve essere una URL raggiungibile.
+Per la UI, `audioPath` deve essere una URL raggiungibile dal browser.
 
 Non e sufficiente restituire un path locale Windows come:
 
@@ -215,37 +251,133 @@ Se Voicebox genera un file locale, quel file deve essere esposto via URL HTTP pr
 - riprodotto nella UI
 - scaricato dalla UI
 
-## Asset demo / fallback locali
+## Asset demo locali
 
-Per la modalita demo locale, i media statici vanno messi qui:
+Gli asset demo devono stare dentro `public/assets/` e seguire naming rigoroso.
+
+### Immagini demo
+
+Per ogni stile:
 
 ```text
-public/
-└── assets/
-    ├── storia/
-    │   ├── scene_01.png ... scene_06.png
-    │   └── narration_01.mp3 ... narration_06.mp3
-    ├── scienze/
-    │   ├── scene_01.png ... scene_06.png
-    │   └── narration_01.mp3 ... narration_06.mp3
-    └── arte/
-        ├── scene_01.png ... scene_06.png
-        └── narration_01.mp3 ... narration_06.mp3
+public/assets/{style}/
+  scene_01/
+    variant_01.png
+    variant_02.png
+    variant_03.png
+    variant_04.png
+  scene_02/
+    variant_01.png
+    variant_02.png
+    variant_03.png
+    variant_04.png
+  ...
+  scene_06/
+    variant_01.png
+    variant_02.png
+    variant_03.png
+    variant_04.png
 ```
 
-Perche qui:
+Regole:
 
-- tutto cio che sta in `public/` viene servito direttamente da Vite
-- quindi il browser puo leggere path come:
-  - `/assets/storia/scene_01.png`
-  - `/assets/storia/narration_01.mp3`
+- 6 scene per stile
+- 4 varianti per scena
+- usa sempre due cifre: `01`-`06`
+- usa sempre `variant_01`-`variant_04`
 
-Regole operative:
+### Audio demo
 
-- i nomi devono combaciare esattamente
-- usa sempre numerazione a due cifre: `01`-`06`
-- ogni stile dovrebbe avere tutti e 6 i file per una demo completamente deterministica
-- se manca un file, quella scena puo risultare incompleta in demo mode
+Per ogni stile:
+
+```text
+public/assets/{style}/
+  audio_set_01/
+    narration_01.mp3
+    narration_02.mp3
+    narration_03.mp3
+    narration_04.mp3
+    narration_05.mp3
+    narration_06.mp3
+  audio_set_02/
+    ...
+  audio_set_03/
+    ...
+  audio_set_04/
+    ...
+  audio_set_05/
+    ...
+```
+
+Regole:
+
+- 5 set audio per stile
+- ogni set contiene 6 tracce
+- tutte le scene di un run demo usano lo stesso `audio_set_*`
+- anche qui usa sempre due cifre: `01`-`06`
+
+### Video demo
+
+Per ogni stile:
+
+```text
+public/assets/{style}/video_demo.mp4
+```
+
+Esempi validi:
+
+- `public/assets/storia/video_demo.mp4`
+- `public/assets/scienze/video_demo.mp4`
+- `public/assets/arte/video_demo.mp4`
+
+### Perche questa cartella
+
+Tutto cio che sta in `public/` viene servito direttamente da Vite.
+
+Quindi il browser puo leggere URL come:
+
+- `/assets/storia/scene_01/variant_02.png`
+- `/assets/storia/audio_set_03/narration_01.mp3`
+- `/assets/storia/video_demo.mp4`
+
+Se un asset manca, la UI deve degradare in modo controllato, ma la demo ideale richiede che il set sia completo.
+
+## Rigenerazione in Demo mode
+
+In `Demo mode`, il pulsante di rigenerazione cambia solo i media.
+
+Resta invariato:
+
+- testo delle scene
+- ordine delle scene
+- titoli
+- script
+- tema demo attivo
+
+Cambia:
+
+- variante immagine per scena
+- set audio del run
+- output video locale (se previsto di aggiornarlo)
+- piccoli dettagli di log/percezione
+
+### Regole di randomizzazione
+
+- Immagini: non riusare subito la variante appena usata per la stessa scena
+- Audio: non riusare subito l'ultimo `audio_set_*` appena usato per quello stile
+- Quando il pool e esaurito, viene resettato evitando la ripetizione immediata dell'ultimo elemento
+
+## Output video demo
+
+Nel pannello destro esiste un blocco `VIDEO OUTPUT`.
+
+In `Demo mode`:
+
+- usa `public/assets/{style}/video_demo.mp4`
+- e parte del pacchetto demo finale
+- puo essere visualizzato e scaricato
+
+Non e una generazione video reale. E un output locale coerente con lo stile selezionato.
 
 ## Export
 
@@ -261,23 +393,167 @@ Esporta:
 
 ### Pannello export a destra
 
-Le voci funzionano solo se esiste un artefatto reale dietro.
+Formati attuali:
 
-- alcune opzioni dipendono dal backend
-- export video/package richiedono URL reali forniti dalla response backend
-- se un artefatto non esiste, il relativo export deve essere considerato non disponibile
+- `Storyboard JSON`
+- `Audio MP3`
+- `Video MP4`
+- `Full Package`
 
-Non considerare disponibili:
+Regole:
 
-- export finti
-- formati non ancora prodotti davvero
-- uno `Storyboard PDF` se l'artefatto reale corrente e JSON
+- `Storyboard JSON` scarica un JSON reale
+- `Audio MP3` funziona solo se esiste almeno una traccia disponibile
+- `Video MP4` funziona se esiste un file video reale (backend o demo locale)
+- `Full Package` resta disabilitato finche non esiste un artefatto reale
 
-## Contratti runtime
+Non viene dichiarato nessun export PDF che non esista davvero.
+
+## Script voce (deliverable)
+
+Il repo contiene una cartella dedicata ai pack di script da consegnare al team voce:
+
+```text
+demo_assets/
+  voice_scripts/
+    markdown/
+    json/
+```
+
+File previsti:
+
+```text
+demo_assets/voice_scripts/
+  markdown/
+    grain_cycle_pack_01.md
+    grain_cycle_pack_02.md
+    grain_cycle_pack_03.md
+    grain_cycle_pack_04.md
+    grain_cycle_pack_05.md
+  json/
+    grain_cycle_pack_01.json
+    grain_cycle_pack_02.json
+    grain_cycle_pack_03.json
+    grain_cycle_pack_04.json
+    grain_cycle_pack_05.json
+```
+
+Ogni pack contiene:
+
+- 6 scene
+- contenuto completo sul tema `ciclo del grano`
+- testo realmente diverso dagli altri pack
+- doppio formato:
+  - `.md` per lettura/approvazione
+  - `.json` per uso tecnico
+
+Questi file non sono asset runtime del browser: sono materiale operativo interno da consegnare al team voce.
+
+## Checklist pre-demo
+
+### Se usi LIVE n8n
+
+1. Avvia n8n
+2. Avvia `npm run pdf:extractor`
+3. Verifica che il webhook nelle `Settings` sia corretto
+4. Assicurati che `Demo mode` sia disattivata
+5. Carica un PDF reale con testo selezionabile
+6. Esegui un run di test
+7. Controlla:
+   - storyboard visibile
+   - immagini caricate
+   - audio presente solo se il backend restituisce URL validi
+   - export coerenti
+
+### Se usi Demo mode
+
+1. Verifica che gli asset demo siano presenti in `public/assets/...`
+2. Attiva `Demo mode` dalle `Settings`
+3. Inserisci opzionalmente un `Focus Prompt`
+4. Premi `Generate`
+5. Controlla:
+   - 6 scene
+   - immagini presenti
+   - audio presenti
+   - video demo presente
+   - log credibili
+6. Se il percorso live non e stabile, usa questa modalita per la presentazione
+
+## Troubleshooting
+
+### `pdfContent` vuoto / `Decoded PDF payload is empty`
+
+Cause tipiche:
+
+- input PDF finto o non valido
+- configurazione errata del body nel nodo HTTP di n8n
+
+Azione:
+
+- carica un PDF reale
+- nel nodo HTTP n8n usa `Using Fields Below` per inviare `pdfBase64`
+
+### `requestId mismatch`
+
+Causa:
+
+- il backend non sta restituendo la response finale corretta
+- oppure manca `requestId` top-level
+
+Azione:
+
+- assicurati che la response finale di n8n includa `requestId` top-level
+
+### Immagini non visibili
+
+Causa:
+
+- `imagePath` mancante
+- oppure URL non realmente fetchabile
+
+Azione:
+
+- il backend deve restituire URL finali immagine reali
+- non usare URL di polling o path non serviti dal browser
+
+### Audio non riproducibile
+
+Causa:
+
+- `audioPath` e un path di filesystem locale
+
+Azione:
+
+- esporre i file audio via URL HTTP
+- restituire alla UI una URL browser-safe
+
+### Voicebox timeout
+
+Causa:
+
+- servizio locale lento
+- timeout troppo basso
+- concorrenza troppo alta
+
+Azione:
+
+- alzare il timeout
+- preferire elaborazione seriale
+
+### Confusione tra `webhook` e `webhook-test`
+
+Causa:
+
+- la UI punta al path di test di n8n
+
+Azione:
+
+- per il percorso normale usa sempre:
+  - `http://localhost:5678/webhook/edugen-process`
+
+## Contratti runtime rilevanti
 
 ### Frontend -> n8n
-
-Payload attuale:
 
 ```json
 {
@@ -291,7 +567,7 @@ Payload attuale:
 }
 ```
 
-### PDF extractor
+### Helper PDF extractor
 
 Request:
 
@@ -330,8 +606,6 @@ Failure response:
 
 ### Voicebox
 
-Payload atteso:
-
 ```json
 {
   "profile_id": "13bddcc3-62da-4134-b51c-5ece3f20eb94",
@@ -343,106 +617,11 @@ Payload atteso:
 }
 ```
 
-## Checklist pre-demo
+## Riferimenti utili nel repo
 
-### Checklist per LIVE n8n
-
-1. Avvia n8n.
-2. Avvia `npm run pdf:extractor`.
-3. Verifica che il webhook in `Settings` sia:
-   - `http://localhost:5678/webhook/edugen-process`
-4. Verifica che `Demo mode` sia disattivo.
-5. Carica un PDF reale con testo estraibile.
-6. Esegui un smoke test completo.
-7. Controlla che:
-   - le storyboard card si vedano
-   - le immagini carichino davvero
-   - l'audio compaia solo se il backend restituisce URL usabili dal browser
-   - gli export rispondano in modo coerente
-
-### Checklist per Demo mode
-
-1. Verifica che gli asset demo siano presenti in `public/assets/...`.
-2. Attiva `Demo mode` da `Settings`.
-3. Premi `Generate`.
-4. Verifica che la demo locale deterministica compaia correttamente.
-5. Usa questa modalita se il backend live diventa instabile o non vuoi dipendere dai servizi locali.
-
-## Troubleshooting
-
-### `pdfContent` empty / `Decoded PDF payload is empty`
-
-Cause tipiche:
-
-- PDF finto o malformato
-- body del nodo HTTP n8n configurato male
-
-Azioni:
-
-- carica un PDF reale
-- nel nodo HTTP verso il PDF extractor usa `Using Fields Below` per `pdfBase64`, non un JSON fragile costruito a mano
-
-### `requestId mismatch`
-
-Causa tipica:
-
-- il backend ha risposto con un payload di errore o senza `requestId`
-
-Azione:
-
-- assicurati che la response finale di n8n riecheggi `requestId` a livello top-level sia nei successi sia negli errori gestiti
-
-### Immagini non visibili
-
-Causa tipica:
-
-- `imagePath` mancante
-- `imagePath` non e una vera URL immagine
-- il backend sta restituendo un URL di polling invece del file finale
-
-Azione:
-
-- il backend deve restituire solo URL finali immagine realmente fetchabili dal browser
-
-### Audio non riproducibile
-
-Causa tipica:
-
-- `audioPath` e un path locale filesystem
-
-Azione:
-
-- esponi il file audio via HTTP e restituisci una URL browser-safe
-
-### Voicebox timeout
-
-Causa tipica:
-
-- servizio locale lento
-- timeout troppo basso
-- troppo parallelismo
-
-Azione:
-
-- alza il timeout
-- preferisci elaborazione seriale se necessario
-
-### Confusione tra `webhook` e `webhook-test`
-
-Causa tipica:
-
-- la UI punta al test webhook
-
-Azione:
-
-- per il percorso normale usa sempre `http://localhost:5678/webhook/edugen-process`
-
-## Riferimenti nel repo
-
-Documenti di supporto ancora utili:
+Documenti secondari ancora utili come supporto tecnico:
 
 - `n8n/PDF_TEXT_EXTRACTION_HELPER.md`
 - `n8n/EDUGEN_FLOW_HARDENING.md`
 
-Questi documenti vanno letti come riferimenti implementativi.
-Quando divergono dal comportamento effettivo della versione attuale, segui questo README.
+Usali come riferimento implementativo. Se divergono dal comportamento attuale dell'app, fai fede prima a questo README.

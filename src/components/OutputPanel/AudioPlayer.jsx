@@ -17,7 +17,8 @@ export default function AudioPlayer({
 }) {
   const safeIndex = Math.max(0, Math.min(selectedSceneIndex, scenes.length - 1));
   const selectedScene = scenes[safeIndex] || null;
-  const selectedAudioUrl = selectedScene?.audioPath || fallbackAudioUrl || null;
+  const selectedAudioUrl =
+    selectedScene?.audioPath || selectedScene?.audioDownloadUrl || fallbackAudioUrl || null;
   const hasMultiSceneAudio = scenes.length > 1;
 
   const narrationLabel = useMemo(() => {
@@ -120,7 +121,7 @@ export default function AudioPlayer({
             disabled={disabled}
           />
           <a
-            href={selectedAudioUrl ?? undefined}
+            href={(selectedScene?.audioDownloadUrl || selectedAudioUrl) ?? undefined}
             download={`narrazione-scena-${selectedScene?.number || 1}.wav`}
             className={`grid h-8 w-8 place-items-center rounded border ${
               disabled

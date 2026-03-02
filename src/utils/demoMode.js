@@ -1,7 +1,7 @@
 const STYLE_PRESETS = {
   storia: {
     label: "Storia",
-    palette: ["#4f46e5", "#f59e0b", "#14b8a6"],
+    palette: ["#d97706", "#facc15", "#0f766e"],
     sceneTitles: [
       "Contesto storico",
       "Cause principali",
@@ -13,7 +13,7 @@ const STYLE_PRESETS = {
   },
   scienze: {
     label: "Scienze",
-    palette: ["#0ea5e9", "#22c55e", "#6366f1"],
+    palette: ["#0284c7", "#22c55e", "#facc15"],
     sceneTitles: [
       "Ipotesi iniziale",
       "Setup sperimentale",
@@ -25,7 +25,7 @@ const STYLE_PRESETS = {
   },
   arte: {
     label: "Arte",
-    palette: ["#ec4899", "#f97316", "#8b5cf6"],
+    palette: ["#be185d", "#f97316", "#8b5cf6"],
     sceneTitles: [
       "Introduzione opera",
       "Composizione",
@@ -38,49 +38,81 @@ const STYLE_PRESETS = {
 };
 
 const FALLBACK_STYLE = STYLE_PRESETS.storia;
-const DEMO_GRAIN_SCENES = [
-  {
-    number: 1,
-    title: "Semina",
-    narrationScript:
-      "Il ciclo del grano inizia con la semina. Il seme viene deposto nel terreno e ricoperto con cura per favorire la germinazione.",
+const DEMO_THEMES = {
+  "grain-cycle": {
+    label: "Ciclo del grano",
+    logsFocus: "ciclo del grano",
+    archiveInsights: [
+      {
+        id: "archive_1",
+        label: "Riferimento agricolo di lungo periodo",
+        description: "Timeline agronomica coerente con il focus selezionato.",
+      },
+      {
+        id: "archive_2",
+        label: "Lessico scolastico Zanichelli",
+        description: "Tono e terminologia orientati a una spiegazione didattica.",
+      },
+      {
+        id: "archive_3",
+        label: "Suggerimento iconografico archivistico",
+        description: "Supporto visuale orientato a semina, crescita e raccolta.",
+      },
+    ],
+    scenes: [
+      {
+        number: 1,
+        title: "Semina",
+        narrationScript:
+          "Il ciclo del grano inizia con la semina. I chicchi vengono deposti nel terreno e ricoperti con cura, così da creare le condizioni ideali per la nascita della pianta.",
+      },
+      {
+        number: 2,
+        title: "Germinazione",
+        narrationScript:
+          "Dopo l'assorbimento dell'acqua, il seme si apre e compare il primo germoglio. È la fase in cui la vita della nuova pianta diventa visibile e inizia a emergere dal suolo.",
+      },
+      {
+        number: 3,
+        title: "Levata",
+        narrationScript:
+          "La pianta cresce rapidamente, sviluppa il fusto e allunga le foglie. Il campo inizia a riempirsi di steli verdi e il grano entra nella sua fase di crescita attiva.",
+      },
+      {
+        number: 4,
+        title: "Spigatura",
+        narrationScript:
+          "La spiga fuoriesce dal culmo e si forma la struttura che conterrà i futuri chicchi. È il passaggio in cui il raccolto comincia a prendere la sua forma definitiva.",
+      },
+      {
+        number: 5,
+        title: "Maturazione",
+        narrationScript:
+          "Le sostanze nutritive si concentrano nei chicchi e il colore della coltura cambia progressivamente. Il grano passa dal verde al dorato, segno che si avvicina il momento della raccolta.",
+      },
+      {
+        number: 6,
+        title: "Raccolta",
+        narrationScript:
+          "Quando le spighe sono mature, il grano viene raccolto e separato dalla paglia. I chicchi ottenuti diventano la base per la produzione della farina e per nuovi cicli agricoli.",
+      },
+    ],
   },
-  {
-    number: 2,
-    title: "Germinazione",
-    narrationScript:
-      "Dopo la semina, il seme assorbe acqua e si apre. Dalla cariosside nasce il primo germoglio che emerge dal terreno.",
-  },
-  {
-    number: 3,
-    title: "Levata",
-    narrationScript:
-      "La giovane pianta cresce e sviluppa il fusto. Le foglie si allungano e il grano inizia a occupare il campo.",
-  },
-  {
-    number: 4,
-    title: "Spigatura",
-    narrationScript:
-      "La spiga si forma e fuoriesce. In questa fase si sviluppano i futuri chicchi che daranno origine al raccolto.",
-  },
-  {
-    number: 5,
-    title: "Maturazione",
-    narrationScript:
-      "Le sostanze nutritive si concentrano nella spiga. I chicchi si ingrossano e il colore del campo diventa dorato.",
-  },
-  {
-    number: 6,
-    title: "Raccolta",
-    narrationScript:
-      "Quando il grano è maturo si passa alla raccolta. I chicchi vengono separati e preparati per la trasformazione in farina.",
-  },
-];
+};
 
-function createSceneDataUrl(sceneNumber, title, colors) {
+const DEFAULT_THEME = "grain-cycle";
+const IMAGE_VARIANT_COUNT = 4;
+const AUDIO_SET_COUNT = 5;
+
+function getStylePreset(styleKey) {
+  return STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
+}
+
+function createSceneDataUrl(sceneNumber, title, colors, variantIndex = 1) {
   const [a, b, c] = colors;
+  const accent = [0.1, 0.18, 0.26, 0.34][Math.max(0, Math.min(variantIndex - 1, 3))];
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240">
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="${a}" />
@@ -88,40 +120,21 @@ function createSceneDataUrl(sceneNumber, title, colors) {
           <stop offset="100%" stop-color="${c}" />
         </linearGradient>
       </defs>
-      <rect width="400" height="220" fill="#09090f" />
-      <rect x="14" y="14" width="372" height="192" rx="12" fill="url(#bg)" opacity="0.85" />
-      <circle cx="328" cy="64" r="44" fill="#ffffff" fill-opacity="0.12" />
-      <rect x="34" y="34" width="160" height="18" rx="9" fill="#ffffff" fill-opacity="0.23" />
-      <rect x="34" y="66" width="280" height="10" rx="5" fill="#ffffff" fill-opacity="0.16" />
-      <rect x="34" y="86" width="218" height="10" rx="5" fill="#ffffff" fill-opacity="0.16" />
-      <rect x="34" y="152" width="118" height="34" rx="6" fill="#111827" fill-opacity="0.46" />
-      <text x="44" y="174" fill="#ffffff" font-family="Inter, sans-serif" font-size="16" font-weight="700">Scene ${sceneNumber}</text>
-      <text x="34" y="126" fill="#ffffff" font-family="Inter, sans-serif" font-size="18" font-weight="600">${title}</text>
+      <rect width="400" height="240" fill="#09090f" />
+      <rect x="14" y="14" width="372" height="212" rx="14" fill="url(#bg)" opacity="0.9" />
+      <circle cx="332" cy="66" r="44" fill="#ffffff" fill-opacity="${accent}" />
+      <path d="M34 170 C96 112, 156 112, 220 170 S338 228, 370 182" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="5" stroke-linecap="round" />
+      <path d="M36 190 C100 132, 156 132, 220 190 S338 246, 372 204" fill="none" stroke="#111827" stroke-opacity="0.18" stroke-width="16" stroke-linecap="round" />
+      <rect x="34" y="34" width="164" height="18" rx="9" fill="#ffffff" fill-opacity="0.24" />
+      <rect x="34" y="64" width="282" height="11" rx="5" fill="#ffffff" fill-opacity="0.16" />
+      <rect x="34" y="84" width="228" height="11" rx="5" fill="#ffffff" fill-opacity="0.14" />
+      <rect x="34" y="154" width="144" height="38" rx="8" fill="#111827" fill-opacity="0.46" />
+      <text x="46" y="177" fill="#ffffff" font-family="Inter, sans-serif" font-size="16" font-weight="700">Scene ${sceneNumber}</text>
+      <text x="34" y="126" fill="#ffffff" font-family="Inter, sans-serif" font-size="20" font-weight="700">${title}</text>
+      <text x="34" y="212" fill="#ffffff" fill-opacity="0.8" font-family="Inter, sans-serif" font-size="13">Variant ${String(variantIndex).padStart(2, "0")}</text>
     </svg>
   `;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-export function createDemoStoryboard(styleKey = "storia") {
-  const style = STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
-  return style.sceneTitles.map((title, index) => ({
-    id: `scene_${index + 1}`,
-    number: index + 1,
-    title,
-    imageUrl: createSceneDataUrl(index + 1, title, style.palette),
-  }));
-}
-
-export function createFallbackDemoPackage(styleKey = "storia") {
-  const style = STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
-
-  return DEMO_GRAIN_SCENES.map((scene, index) => ({
-    id: `scene_${scene.number}`,
-    number: scene.number,
-    title: scene.title,
-    narrationScript: scene.narrationScript,
-    imageUrl: createSceneDataUrl(scene.number, scene.title, style.palette),
-  }));
 }
 
 function writeWavHeader(view, sampleRate, frames) {
@@ -148,18 +161,22 @@ function writeWavHeader(view, sampleRate, frames) {
   view.setUint32(40, dataLength, true);
 }
 
-export function createDemoNarrationUrl(durationSeconds = 14) {
+export function createDemoNarrationUrl(durationSeconds = 12, voiceVariant = 1) {
   const sampleRate = 22050;
   const frames = durationSeconds * sampleRate;
   const buffer = new ArrayBuffer(44 + frames * 2);
   const view = new DataView(buffer);
   writeWavHeader(view, sampleRate, frames);
 
+  const primaryFrequency = 165 + voiceVariant * 18;
+  const secondaryFrequency = 250 + voiceVariant * 12;
+  const tertiaryFrequency = 340 + voiceVariant * 9;
+
   for (let index = 0; index < frames; index += 1) {
     const time = index / sampleRate;
-    const waveA = Math.sin(2 * Math.PI * 215 * time) * 0.25;
-    const waveB = Math.sin(2 * Math.PI * 325 * time) * 0.16;
-    const waveC = Math.sin(2 * Math.PI * 420 * time) * 0.08;
+    const waveA = Math.sin(2 * Math.PI * primaryFrequency * time) * 0.24;
+    const waveB = Math.sin(2 * Math.PI * secondaryFrequency * time) * 0.15;
+    const waveC = Math.sin(2 * Math.PI * tertiaryFrequency * time) * 0.07;
     const envelope = Math.sin(Math.PI * (index / frames));
     const value = Math.max(-1, Math.min(1, (waveA + waveB + waveC) * envelope));
     view.setInt16(44 + index * 2, value * 32767, true);
@@ -168,127 +185,348 @@ export function createDemoNarrationUrl(durationSeconds = 14) {
   return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
 }
 
-export function buildDemoTimeline({ fileName, styleLabel, sceneCount }) {
-  const base = [
-    {
-      delay: 0,
-      type: "success",
-      message: `PDF loaded: ${fileName}`,
-      currentStep: "Estrazione testo",
-      progress: 6,
-      stepStates: { input: "complete", parsing: "active" },
-      tokens: 420,
-    },
-    {
-      delay: 900,
-      type: "info",
-      message: "Extracting text content and semantic chunks...",
-      currentStep: "Parsing documento",
-      progress: 15,
-      stepStates: { parsing: "active" },
-      tokens: 1800,
-    },
-    {
-      delay: 2200,
-      type: "success",
-      message: "Extracted 2,450 words from 12 pages",
-      currentStep: "Analisi LLM",
-      progress: 28,
-      stepStates: { parsing: "complete", llm: "active" },
-      tokens: 4100,
-    },
-    {
-      delay: 3600,
-      type: "info",
-      message: "Starting LLM analysis for scene segmentation...",
-      currentStep: "Analisi LLM",
-      progress: 38,
-      stepStates: { llm: "active" },
-      tokens: 6850,
-    },
-    {
-      delay: 5100,
-      type: "success",
-      message: `Identified ${sceneCount} storyboard scenes`,
-      currentStep: "Selezione stile",
-      progress: 48,
-      stepStates: { llm: "complete", style: "active" },
-      tokens: 8900,
-    },
-    {
-      delay: 6100,
-      type: "info",
-      message: `Loading Style Engine: "${styleLabel}" LoRA adapter`,
-      currentStep: "Render immagini",
-      progress: 56,
-      stepStates: { style: "complete", image: "active" },
-      tokens: 10120,
-    },
-  ];
+function buildDemoImagePath(styleKey, sceneNumber, variantIndex) {
+  const sceneSlug = `scene_${String(sceneNumber).padStart(2, "0")}`;
+  const variantSlug = `variant_${String(variantIndex).padStart(2, "0")}.png`;
+  return `/assets/${styleKey}/${sceneSlug}/${variantSlug}`;
+}
 
-  const scenes = Array.from({ length: sceneCount }).flatMap((_, index) => {
-    const number = index + 1;
-    const start = 7400 + index * 1150;
-    return [
-      {
-        delay: start,
-        type: "info",
-        message: `Generating scene ${number}/${sceneCount}...`,
-        currentStep: "Render immagini",
-        progress: 56 + Math.round((number / sceneCount) * 20),
-        stepStates: { image: "active" },
-        tokens: 10120 + number * 760,
-        scenesGenerated: number - 1,
-      },
-      {
-        delay: start + 760,
-        type: "success",
-        message: `Scene ${number} complete`,
-        currentStep: "Render immagini",
-        progress: 58 + Math.round((number / sceneCount) * 20),
-        stepStates: { image: "active" },
-        tokens: 10440 + number * 810,
-        scenesGenerated: number,
-      },
-    ];
+function buildDemoAudioPath(styleKey, audioSetIndex, sceneNumber) {
+  const setSlug = `audio_set_${String(audioSetIndex).padStart(2, "0")}`;
+  const trackSlug = `narration_${String(sceneNumber).padStart(2, "0")}.mp3`;
+  return `/assets/${styleKey}/${setSlug}/${trackSlug}`;
+}
+
+export function getDemoVideoUrl(styleKey) {
+  return `/assets/${styleKey}/video_demo.mp4`;
+}
+
+function createVideoPosterUrl(styleKey) {
+  const style = getStylePreset(styleKey);
+  const [a, b, c] = style.palette;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${a}" />
+          <stop offset="50%" stop-color="${b}" />
+          <stop offset="100%" stop-color="${c}" />
+        </linearGradient>
+      </defs>
+      <rect width="640" height="360" rx="18" fill="#070b16" />
+      <rect x="16" y="16" width="608" height="328" rx="16" fill="url(#bg)" opacity="0.92" />
+      <circle cx="320" cy="180" r="62" fill="#ffffff" fill-opacity="0.18" />
+      <polygon points="300,144 300,216 360,180" fill="#ffffff" fill-opacity="0.85" />
+      <text x="34" y="324" fill="#ffffff" font-family="Inter, sans-serif" font-size="22" font-weight="700">Video demo - ${style.label}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function getHistoryBucket(mediaHistory, styleKey, themeKey) {
+  const bucketKey = `${styleKey}::${themeKey}`;
+  return {
+    bucketKey,
+    bucket: mediaHistory[bucketKey] || {
+      scenes: {},
+      usedAudioSets: [],
+      lastAudioSet: null,
+    },
+  };
+}
+
+function cloneMediaHistory(mediaHistory) {
+  return JSON.parse(JSON.stringify(mediaHistory || {}));
+}
+
+function selectNextImageVariant(bucket, sceneNumber) {
+  const sceneKey = `scene_${String(sceneNumber).padStart(2, "0")}`;
+  const sceneHistory = bucket.scenes[sceneKey] || {
+    usedImageVariants: [],
+    lastImageVariant: null,
+  };
+
+  const allVariants = Array.from({ length: IMAGE_VARIANT_COUNT }, (_, index) => index + 1);
+  let available = allVariants.filter((variant) => !sceneHistory.usedImageVariants.includes(variant));
+
+  if (!available.length) {
+    available = [...allVariants];
+    if (sceneHistory.lastImageVariant && available.length > 1) {
+      available = available.filter((variant) => variant !== sceneHistory.lastImageVariant);
+    }
+  }
+
+  const nextVariant = available[Math.floor(Math.random() * available.length)];
+  const usedImageVariants = sceneHistory.usedImageVariants.includes(nextVariant)
+    ? [nextVariant]
+    : [...sceneHistory.usedImageVariants, nextVariant];
+
+  bucket.scenes[sceneKey] = {
+    usedImageVariants,
+    lastImageVariant: nextVariant,
+  };
+
+  return nextVariant;
+}
+
+function selectNextAudioSet(bucket) {
+  const allSets = Array.from({ length: AUDIO_SET_COUNT }, (_, index) => index + 1);
+  let available = allSets.filter((setId) => !bucket.usedAudioSets.includes(setId));
+
+  if (!available.length) {
+    available = [...allSets];
+    if (bucket.lastAudioSet && available.length > 1) {
+      available = available.filter((setId) => setId !== bucket.lastAudioSet);
+    }
+  }
+
+  const nextSet = available[Math.floor(Math.random() * available.length)];
+  bucket.usedAudioSets = bucket.usedAudioSets.includes(nextSet)
+    ? [nextSet]
+    : [...bucket.usedAudioSets, nextSet];
+  bucket.lastAudioSet = nextSet;
+
+  return nextSet;
+}
+
+export function resolveDemoTheme(customPrompt = "") {
+  const normalized = customPrompt.toLowerCase();
+  const grainKeywords = ["grano", "semina", "raccolta", "ciclo del grano"];
+  if (!normalized.trim()) return DEFAULT_THEME;
+  if (grainKeywords.some((keyword) => normalized.includes(keyword))) {
+    return DEFAULT_THEME;
+  }
+  return DEFAULT_THEME;
+}
+
+function createArchiveInsights(themeKey) {
+  const theme = DEMO_THEMES[themeKey] || DEMO_THEMES[DEFAULT_THEME];
+  return theme.archiveInsights.map((insight) => ({ ...insight }));
+}
+
+export function createDemoStoryboard(styleKey = "storia") {
+  const style = getStylePreset(styleKey);
+  return style.sceneTitles.map((title, index) => ({
+    id: `scene_${index + 1}`,
+    number: index + 1,
+    title,
+    imageUrl: createSceneDataUrl(index + 1, title, style.palette, 1),
+    fallbackImageUrl: createSceneDataUrl(index + 1, title, style.palette, 1),
+  }));
+}
+
+export function createFallbackDemoPackage(styleKey = "storia") {
+  const style = getStylePreset(styleKey);
+  const theme = DEMO_THEMES[DEFAULT_THEME];
+
+  return theme.scenes.map((scene) => ({
+    id: `scene_${scene.number}`,
+    number: scene.number,
+    title: scene.title,
+    narrationScript: scene.narrationScript,
+    imageUrl: createSceneDataUrl(scene.number, scene.title, style.palette, 1),
+    fallbackImageUrl: createSceneDataUrl(scene.number, scene.title, style.palette, 1),
+    imageSources: [createSceneDataUrl(scene.number, scene.title, style.palette, 1)],
+  }));
+}
+
+export function createDemoPackage({
+  styleKey = "storia",
+  customPrompt = "",
+  mediaHistory = {},
+  demoRunCount = 0,
+}) {
+  const themeKey = resolveDemoTheme(customPrompt);
+  const theme = DEMO_THEMES[themeKey] || DEMO_THEMES[DEFAULT_THEME];
+  const style = getStylePreset(styleKey);
+  const nextMediaHistory = cloneMediaHistory(mediaHistory);
+  const { bucketKey, bucket } = getHistoryBucket(nextMediaHistory, styleKey, themeKey);
+  nextMediaHistory[bucketKey] = bucket;
+
+  const audioSet = selectNextAudioSet(bucket);
+  const scenes = theme.scenes.map((scene) => {
+    const variantIndex = selectNextImageVariant(bucket, scene.number);
+    const fallbackImageUrl = createSceneDataUrl(
+      scene.number,
+      scene.title,
+      style.palette,
+      variantIndex,
+    );
+    const fallbackAudioUrl = createDemoNarrationUrl(
+      Math.max(8, Math.round(scene.narrationScript.length / 18)),
+      audioSet,
+    );
+    const imagePath = buildDemoImagePath(styleKey, scene.number, variantIndex);
+    const preferredAudioPath = buildDemoAudioPath(styleKey, audioSet, scene.number);
+
+    return {
+      id: `scene_${scene.number}`,
+      number: scene.number,
+      title: scene.title,
+      narrationScript: scene.narrationScript,
+      duration: Math.max(8, Number((scene.narrationScript.length / 18).toFixed(1))),
+      imageUrl: imagePath,
+      imageSources: [imagePath, fallbackImageUrl],
+      fallbackImageUrl,
+      imageVariantKey: `variant_${String(variantIndex).padStart(2, "0")}`,
+      audioPath: fallbackAudioUrl,
+      audioSources: [preferredAudioPath, fallbackAudioUrl],
+      audioDownloadUrl: fallbackAudioUrl,
+      preferredAudioPath,
+      audioSetKey: `audio_set_${String(audioSet).padStart(2, "0")}`,
+    };
   });
 
-  const voiceStart = 7600 + sceneCount * 1150;
-  const ending = [
-    {
-      delay: voiceStart,
-      type: "info",
-      message: "Starting voice synthesis...",
-      currentStep: "Sintesi vocale",
-      progress: 85,
-      stepStates: { image: "complete", voice: "active" },
-      tokens: 14680,
-      scenesGenerated: sceneCount,
-    },
-    {
-      delay: voiceStart + 2100,
-      type: "success",
-      message: "Audio narration generated (4:12)",
-      currentStep: "Packaging output",
-      progress: 94,
-      stepStates: { voice: "complete", output: "active" },
-      tokens: 15600,
-      scenesGenerated: sceneCount,
-    },
-    {
-      delay: voiceStart + 2900,
-      type: "success",
-      message: "Pipeline complete! Ready for export.",
-      currentStep: "Completato",
-      progress: 100,
-      stepStates: { output: "complete" },
-      tokens: 16240,
-      scenesGenerated: sceneCount,
-      isFinal: true,
-    },
-  ];
+  return {
+    themeKey,
+    themeLabel: theme.label,
+    styleLabel: style.label,
+    archiveInsights: createArchiveInsights(themeKey),
+    scenes,
+    audioSetKey: `audio_set_${String(audioSet).padStart(2, "0")}`,
+    videoUrl: getDemoVideoUrl(styleKey),
+    videoPosterUrl: createVideoPosterUrl(styleKey),
+    updatedMediaHistory: nextMediaHistory,
+    runLabel: `run_${demoRunCount + 1}`,
+  };
+}
 
-  return [...base, ...scenes, ...ending];
+export function buildDemoTimeline({
+  fileName,
+  styleLabel,
+  sceneCount,
+  themeLabel,
+  customPrompt,
+  includeArchive = true,
+}) {
+  const focusEnabled = Boolean(customPrompt?.trim());
+  const timeSeed = Math.random();
+  const multiplier = 1 + timeSeed * 0.18;
+  const steps = [];
+  let cursor = 0;
+
+  const pushStep = (delta, payload) => {
+    cursor += Math.round(delta * multiplier);
+    steps.push({ delay: cursor, ...payload });
+  };
+
+  steps.push({
+    delay: 0,
+    type: "success",
+    message: `PDF caricato: ${fileName}`,
+    currentStep: "Acquisizione input",
+    progress: 5,
+    stepStates: { input: "active" },
+    tokens: 520,
+  });
+
+  pushStep(950, {
+    type: "info",
+    message: "Interpretazione struttura e segmentazione del documento...",
+    currentStep: "Parse request",
+    progress: 14,
+    stepStates: { input: "complete", parsing: "active" },
+    tokens: 2100,
+  });
+
+  if (focusEnabled) {
+    pushStep(900, {
+      type: "success",
+      message: `Focus semantico applicato: ${customPrompt.trim()}`,
+      currentStep: "Analisi LLM",
+      progress: 22,
+      stepStates: { parsing: "active" },
+      tokens: 3340,
+    });
+  }
+
+  pushStep(1350, {
+    type: "info",
+    message: `Analisi LLM in corso su focus "${themeLabel.toLowerCase()}"...`,
+    currentStep: "LLM analysis",
+    progress: 32,
+    stepStates: { parsing: "complete", llm: "active" },
+    tokens: 5820,
+  });
+
+  if (includeArchive) {
+    pushStep(1150, {
+      type: "success",
+      message: "Archivio Vivo: 3 riferimenti contestuali agganciati",
+      currentStep: "Archivio Vivo",
+      progress: 42,
+      stepStates: { llm: "complete", archive: "active" },
+      tokens: 7480,
+    });
+  }
+
+  pushStep(950, {
+    type: "info",
+    message: `Style prompt ottimizzato per ${styleLabel}`,
+    currentStep: "Style Prompt",
+    progress: 50,
+    stepStates: { archive: includeArchive ? "complete" : "idle", style: "active" },
+    tokens: 8660,
+  });
+
+  pushStep(850, {
+    type: "info",
+    message: "Selezione LoRA e ControlNet in corso...",
+    currentStep: "LoRA + ControlNet",
+    progress: 58,
+    stepStates: { style: "complete", lora: "active", controlnet: "active" },
+    tokens: 9440,
+  });
+
+  for (let index = 0; index < sceneCount; index += 1) {
+    const sceneNumber = index + 1;
+    pushStep(780, {
+      type: "info",
+      message: `Set immagini aggiornato: scena ${sceneNumber}/${sceneCount}`,
+      currentStep: "Image Gen",
+      progress: 62 + Math.round(((sceneNumber - 1) / sceneCount) * 14),
+      stepStates: {
+        lora: "complete",
+        controlnet: "complete",
+        image: "active",
+      },
+      tokens: 10320 + sceneNumber * 620,
+      scenesGenerated: sceneNumber,
+    });
+  }
+
+  pushStep(1120, {
+    type: "success",
+    message: "Tracce audio selezionate",
+    currentStep: "Voice Synth",
+    progress: 80,
+    stepStates: { image: "complete", voice: "active" },
+    tokens: 14640,
+    scenesGenerated: sceneCount,
+  });
+
+  pushStep(920, {
+    type: "success",
+    message: "Composizione video pronta",
+    currentStep: "Video Compose",
+    progress: 90,
+    stepStates: { voice: "complete", video: "active" },
+    tokens: 15420,
+    scenesGenerated: sceneCount,
+  });
+
+  pushStep(1100, {
+    type: "success",
+    message: "Pipeline completata",
+    currentStep: "Aggregate Output",
+    progress: 100,
+    stepStates: { video: "complete", output: "complete" },
+    tokens: 16120,
+    scenesGenerated: sceneCount,
+    isFinal: true,
+  });
+
+  return steps;
 }
 
 export const STYLE_LABELS = {

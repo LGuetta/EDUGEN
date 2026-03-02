@@ -1,6 +1,12 @@
 import { AlertCircle, CheckCircle2, LoaderCircle, Sparkles } from "lucide-react";
 
-export default function GenerateButton({ canGenerate, status, progress = 0, onClick }) {
+export default function GenerateButton({
+  canGenerate,
+  status,
+  progress = 0,
+  demoMode = false,
+  onClick,
+}) {
   const processing = status === "processing";
   const complete = status === "complete";
   const error = status === "error";
@@ -29,7 +35,9 @@ export default function GenerateButton({ canGenerate, status, progress = 0, onCl
       {processing
         ? `GENERATING... ${Math.round(progress)}%`
         : complete
-          ? "COMPLETE!"
+          ? demoMode
+            ? "REGENERATE"
+            : "COMPLETE!"
           : error
             ? "RETRY GENERATE"
             : "GENERATE"}

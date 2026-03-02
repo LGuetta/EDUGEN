@@ -1,0 +1,13 @@
+{
+  "packId": "grain_cycle_pack_05",
+  "theme": "grain-cycle",
+  "style": "editorial",
+  "scenes": [
+    { "sceneNumber": 1, "title": "Avvio della coltivazione", "script": "La semina rappresenta l'apertura del ciclo produttivo del grano. In questa fase si stabiliscono le condizioni iniziali da cui dipendera lo sviluppo dell'intera coltura." },
+    { "sceneNumber": 2, "title": "Innesco della germinazione", "script": "Grazie alla presenza di umidita e temperatura adeguata, il seme avvia la germinazione. E il momento in cui il potenziale contenuto nel chicco diventa crescita concreta." },
+    { "sceneNumber": 3, "title": "Consolidamento della pianta", "script": "Durante lo sviluppo vegetativo, la pianta rafforza fusto e apparato fogliare. Questa stabilita e essenziale per sostenere le fasi successive." },
+    { "sceneNumber": 4, "title": "Formazione della spiga", "script": "La spigatura segna il passaggio alla fase produttiva. La pianta mostra la struttura da cui si svilupperanno i chicchi che costituiscono il raccolto." },
+    { "sceneNumber": 5, "title": "Completamento della maturazione", "script": "Nella maturazione, la spiga si completa e il chicco raggiunge le caratteristiche necessarie per il raccolto. Il campo assume il tipico aspetto dorato della piena estate." },
+    { "sceneNumber": 6, "title": "Raccolta e passaggio di filiera", "script": "Con la raccolta termina il ciclo in campo e inizia quello di trasformazione. Il grano raccolto entra cosi nella filiera che porta ai principali prodotti alimentari." }
+  ]
+}

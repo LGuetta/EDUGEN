@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { Expand } from "lucide-react";
+import { useMemo, useState } from "react";
 import SceneCard from "./SceneCard";
 
 function SkeletonCard({ index }) {
@@ -16,8 +17,16 @@ function SkeletonCard({ index }) {
   );
 }
 
-export default function Storyboard({ scenes, isLoading, selectedSceneId, onSelectScene }) {
+export default function Storyboard({
+  scenes,
+  isLoading,
+  selectedSceneId,
+  onSelectScene,
+  onOpenLightbox,
+  archiveInsights = [],
+}) {
   const selectedScene = scenes.find((scene) => scene.id === selectedSceneId) || null;
+  const [failedPreview, setFailedPreview] = useState(false);
 
   const headline = useMemo(() => {
     if (isLoading) return "Generazione scene in corso";
@@ -49,12 +58,47 @@ export default function Storyboard({ scenes, isLoading, selectedSceneId, onSelec
 
       {selectedScene ? (
         <div className="mt-3 rounded-lg border border-borderPrimary bg-bgPrimary/50 p-3">
+          <button
+            type="button"
+            onClick={() => onOpenLightbox?.(selectedScene)}
+            className="group relative mb-3 block w-full overflow-hidden rounded-lg border border-borderPrimary"
+          >
+            <img
+              src={failedPreview ? selectedScene.fallbackImageUrl || selectedScene.imageUrl : selectedScene.imageUrl}
+              alt={selectedScene.title}
+              className="h-36 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+              onError={() => setFailedPreview(true)}
+            />
+            <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-white/20 bg-black/55 px-2 py-1 text-[10px] font-semibold tracking-[0.08em] text-white">
+              <Expand size={10} />
+              APRI
+            </span>
+          </button>
           <p className="text-xs font-semibold text-accentInfo">
             Scene {selectedScene.number} · {selectedScene.title}
           </p>
           <p className="scroll-thin mt-2 max-h-24 overflow-y-auto pr-1 text-xs leading-relaxed text-textSecondary">
             {selectedScene.narrationScript || "Nessuna narrazione disponibile."}
           </p>
+          {archiveInsights.length ? (
+            <div className="mt-3 rounded-lg border border-borderPrimary bg-bgPrimary/45 p-2.5">
+              <p className="text-[10px] font-semibold tracking-[0.08em] text-textMuted">
+                ARCHIVIO VIVO
+              </p>
+              <div className="mt-2 space-y-2">
+                {archiveInsights.slice(0, 2).map((insight) => (
+                  <div key={insight.id}>
+                    <p className="text-[11px] font-medium text-textPrimary">{insight.label}</p>
+                    {insight.description ? (
+                      <p className="mt-0.5 text-[10px] leading-relaxed text-textMuted">
+                        {insight.description}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

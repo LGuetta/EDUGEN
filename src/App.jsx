@@ -20,10 +20,8 @@ import {
   validateN8nResponseShape,
 } from "./utils/contract";
 import {
-  createDemoNarrationUrl,
-  createDemoStoryboard,
+  createDemoPackage,
   buildDemoTimeline,
-  createFallbackDemoPackage,
   STYLE_LABELS,
 } from "./utils/demoMode";
 import { titleCase } from "./utils/formatters";
@@ -32,51 +30,156 @@ const STEP_LABELS = {
   input: "PDF Input",
   parsing: "Parse request",
   llm: "Analisi LLM",
-  parallel: "Style + Voice in parallelo",
+  archive: "Archivio Vivo",
+  style: "Style prompt",
+  lora: "LoRA select",
+  controlnet: "ControlNet",
   image: "Generazione immagini",
+  voice: "Voice synth",
+  video: "Video compose",
   output: "Aggregate output",
 };
 
 const SYNTHETIC_STAGE_SEQUENCE = [
   { id: "input", complete: [], active: ["input"], progress: 8 },
   { id: "parsing", complete: ["input"], active: ["parsing"], progress: 18 },
-  { id: "llm", complete: ["input", "parsing"], active: ["llm"], progress: 34 },
-  { id: "parallel", complete: ["input", "parsing", "llm"], active: ["style", "voice"], progress: 56 },
-  { id: "image", complete: ["input", "parsing", "llm", "voice", "style"], active: ["image"], progress: 76 },
+  { id: "llm", complete: ["input", "parsing"], active: ["llm"], progress: 28 },
+  { id: "archive", complete: ["input", "parsing", "llm"], active: ["archive"], progress: 38 },
+  { id: "style", complete: ["input", "parsing", "llm", "archive"], active: ["style"], progress: 48 },
+  { id: "lora", complete: ["input", "parsing", "llm", "archive", "style"], active: ["lora"], progress: 58 },
+  {
+    id: "controlnet",
+    complete: ["input", "parsing", "llm", "archive", "style", "lora"],
+    active: ["controlnet"],
+    progress: 68,
+  },
+  {
+    id: "image",
+    complete: ["input", "parsing", "llm", "archive", "style", "lora", "controlnet"],
+    active: ["image"],
+    progress: 78,
+  },
+  {
+    id: "voice",
+    complete: [
+      "input",
+      "parsing",
+      "llm",
+      "archive",
+      "style",
+      "lora",
+      "controlnet",
+      "image",
+    ],
+    active: ["voice"],
+    progress: 84,
+  },
+  {
+    id: "video",
+    complete: [
+      "input",
+      "parsing",
+      "llm",
+      "archive",
+      "style",
+      "lora",
+      "controlnet",
+      "image",
+      "voice",
+    ],
+    active: ["video"],
+    progress: 90,
+  },
   {
     id: "output",
-    complete: ["input", "parsing", "llm", "voice", "style", "image"],
+    complete: [
+      "input",
+      "parsing",
+      "llm",
+      "archive",
+      "style",
+      "lora",
+      "controlnet",
+      "image",
+      "voice",
+      "video",
+    ],
     active: ["output"],
-    progress: 90,
+    progress: 96,
   },
 ];
 
 const TRACE_STAGE_META = {
   input: { complete: [], active: ["input"], progress: 8, label: "PDF Input" },
   parsing: { complete: ["input"], active: ["parsing"], progress: 18, label: "Parse request" },
-  llm: { complete: ["input", "parsing"], active: ["llm"], progress: 34, label: "Analisi LLM" },
-  style: {
+  llm: { complete: ["input", "parsing"], active: ["llm"], progress: 28, label: "Analisi LLM" },
+  archive: {
     complete: ["input", "parsing", "llm"],
-    active: ["style", "voice"],
-    progress: 56,
-    label: "Style + Voice in parallelo",
+    active: ["archive"],
+    progress: 38,
+    label: "Archivio Vivo",
   },
-  voice: {
-    complete: ["input", "parsing", "llm"],
-    active: ["style", "voice"],
-    progress: 56,
-    label: "Style + Voice in parallelo",
+  style: {
+    complete: ["input", "parsing", "llm", "archive"],
+    active: ["style"],
+    progress: 48,
+    label: "Style prompt",
+  },
+  lora: {
+    complete: ["input", "parsing", "llm", "archive", "style"],
+    active: ["lora"],
+    progress: 58,
+    label: "LoRA select",
+  },
+  controlnet: {
+    complete: ["input", "parsing", "llm", "archive", "style", "lora"],
+    active: ["controlnet"],
+    progress: 68,
+    label: "ControlNet",
   },
   image: {
-    complete: ["input", "parsing", "llm", "style", "voice"],
+    complete: ["input", "parsing", "llm", "archive", "style", "lora", "controlnet"],
     active: ["image"],
-    progress: 76,
+    progress: 78,
     label: "Generazione immagini",
   },
-  output: {
-    complete: ["input", "parsing", "llm", "style", "voice", "image"],
-    active: ["output"],
+  voice: {
+    complete: ["input", "parsing", "llm", "archive", "style", "lora", "controlnet", "image"],
+    active: ["voice"],
+    progress: 84,
+    label: "Voice synth",
+  },
+  video: {
+    complete: [
+      "input",
+      "parsing",
+      "llm",
+      "archive",
+      "style",
+      "lora",
+      "controlnet",
+      "image",
+      "voice",
+    ],
+    active: ["video"],
     progress: 90,
+    label: "Video compose",
+  },
+  output: {
+    complete: [
+      "input",
+      "parsing",
+      "llm",
+      "archive",
+      "style",
+      "lora",
+      "controlnet",
+      "image",
+      "voice",
+      "video",
+    ],
+    active: ["output"],
+    progress: 96,
     label: "Aggregate output",
   },
 };
@@ -100,9 +203,13 @@ function completeMap() {
     input: "complete",
     parsing: "complete",
     llm: "complete",
+    archive: "complete",
     style: "complete",
+    lora: "complete",
+    controlnet: "complete",
     image: "complete",
     voice: "complete",
+    video: "complete",
     output: "complete",
   };
 }
@@ -140,7 +247,10 @@ function dedupeWarnings(warnings) {
 }
 
 function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
-  const fallback = createDemoStoryboard(style);
+  const fallback = Array.from({ length: rawScenes.length || 6 }, (_, index) => ({
+    number: index + 1,
+    imageUrl: `/assets/${style}/scene_${String(index + 1).padStart(2, "0")}.png`,
+  }));
   const warnings = [];
   let playableAudioCount = 0;
 
@@ -153,6 +263,13 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
     const hasImage = typeof scene.imagePath === "string" && scene.imagePath.trim().length > 0;
     const hasAudio = typeof scene.audioPath === "string" && scene.audioPath.trim().length > 0;
     const resolvedAudioPath = scene.audioPath || fallbackAudioUrl || null;
+    const resolvedImagePath = hasImage ? scene.imagePath : fallbackScene.imageUrl;
+    const imageSources = Array.isArray(scene.imageSources) && scene.imageSources.length
+      ? scene.imageSources
+      : [resolvedImagePath].filter(Boolean);
+    const audioSources = Array.isArray(scene.audioSources) && scene.audioSources.length
+      ? scene.audioSources
+      : [resolvedAudioPath].filter(Boolean);
 
     if (!hasTitle) {
       warnings.push(
@@ -204,8 +321,12 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
         hasNarration
           ? scene.narrationScript
           : "Narrazione in elaborazione. Questo testo verrà aggiornato dal backend.",
-      imageUrl: hasImage ? scene.imagePath : fallbackScene.imageUrl,
+      imageUrl: resolvedImagePath,
+      imageSources,
+      fallbackImageUrl: scene.fallbackImageUrl || fallbackScene.imageUrl || null,
       audioPath: resolvedAudioPath,
+      audioSources,
+      audioDownloadUrl: scene.audioDownloadUrl || resolvedAudioPath,
       duration: Number(scene.duration) > 0 ? Number(scene.duration) : 20,
     };
   });
@@ -222,42 +343,47 @@ function buildDemoProgressTrace() {
     { stage: "input", status: "complete", time: "17:23:45" },
     { stage: "parsing", status: "complete", time: "17:23:46" },
     { stage: "llm", status: "complete", time: "17:23:47" },
-    { stage: "style", status: "complete", time: "17:23:48" },
-    { stage: "voice", status: "complete", time: "17:23:49" },
-    { stage: "image", status: "complete", time: "17:23:50" },
-    { stage: "output", status: "complete", time: "17:23:51" },
+    { stage: "archive", status: "complete", time: "17:23:48" },
+    { stage: "style", status: "complete", time: "17:23:49" },
+    { stage: "lora", status: "complete", time: "17:23:50" },
+    { stage: "controlnet", status: "complete", time: "17:23:51" },
+    { stage: "image", status: "complete", time: "17:23:52" },
+    { stage: "voice", status: "complete", time: "17:23:53" },
+    { stage: "video", status: "complete", time: "17:23:54" },
+    { stage: "output", status: "complete", time: "17:23:55" },
   ];
 }
 
-function buildDemoResponse(selectedStyle, pdfName, requestId, demoScenario) {
-  const demoScenes = createFallbackDemoPackage(selectedStyle);
-  const demoAudioUrl = createDemoNarrationUrl();
-  const warnings = [];
-  const scenes = demoScenes.map((scene) => ({
+function buildDemoResponse(requestId, demoPackage) {
+  const scenes = demoPackage.scenes.map((scene) => ({
     sceneNumber: scene.number,
     title: scene.title,
     narrationScript: scene.narrationScript,
     imagePath: scene.imageUrl,
-    audioPath: demoAudioUrl,
-    duration: 20,
+    imageSources: scene.imageSources,
+    fallbackImageUrl: scene.fallbackImageUrl,
+    audioPath: scene.preferredAudioPath || scene.audioPath,
+    audioSources: scene.audioSources,
+    audioDownloadUrl: scene.audioDownloadUrl,
+    duration: scene.duration,
   }));
-
   return {
     success: true,
     requestId,
     mode: "demo",
     data: {
       storyboard: {
-        title: "Storyboard Demo",
+        title: demoPackage.themeLabel,
         totalScenes: scenes.length,
-        totalDuration: scenes.length * 20,
+        totalDuration: scenes.reduce((total, scene) => total + scene.duration, 0),
         scenes,
       },
+      videoUrl: demoPackage.videoUrl,
+      videoPosterUrl: demoPackage.videoPosterUrl,
     },
-    warnings,
+    warnings: [],
     logs: [],
     progressTrace: buildDemoProgressTrace(),
-    demoAudioUrl,
   };
 }
 
@@ -369,6 +495,8 @@ export default function App() {
     analysis,
     selectedStyle,
     selectedVideoPreset,
+    customPrompt,
+    archiveInsights,
     pipeline,
     output,
     warnings,
@@ -377,6 +505,8 @@ export default function App() {
     isLogCollapsed,
     demoMode,
     demoScenario,
+    demoMediaHistory,
+    demoRunCount,
     integrationSettings,
     lastRequestPayload,
     lastResponsePayload,
@@ -385,6 +515,8 @@ export default function App() {
     setAnalysis,
     setSelectedStyle,
     setSelectedVideoPreset,
+    setCustomPrompt,
+    setArchiveInsights,
     setWarnings,
     setPipelineStatus,
     setCurrentStep,
@@ -401,6 +533,9 @@ export default function App() {
     resetPipelineRun,
     setDemoMode,
     setDemoScenario,
+    setDemoMediaHistory,
+    incrementDemoRunCount,
+    setLastDemoTheme,
     setIntegrationSettings,
     setLastRequestPayload,
     setLastResponsePayload,
@@ -499,13 +634,16 @@ export default function App() {
     }, 1400);
   };
 
-  const replayDemoTimeline = async (pdfName) => {
+  const replayDemoTimeline = async (pdfName, demoPackage) => {
     stopPipelineAnimation();
 
     const timeline = buildDemoTimeline({
       fileName: pdfName,
       styleLabel,
-      sceneCount: 6,
+      sceneCount: demoPackage.scenes.length,
+      themeLabel: demoPackage.themeLabel,
+      customPrompt,
+      includeArchive: true,
     });
     const speedMultiplier = demoScenario === "slow-success" ? 1 : 0.55;
     let previousDelay = 0;
@@ -536,7 +674,7 @@ export default function App() {
           tokens: typeof entry.tokens === "number" ? entry.tokens : 0,
           scenesGenerated:
             typeof entry.scenesGenerated === "number" ? entry.scenesGenerated : 0,
-          battute: 0,
+          battute: stats.battute,
         });
       }
     }
@@ -646,9 +784,12 @@ export default function App() {
     setWarnings([]);
     resetElapsedTime();
     setPipelineStatus("processing");
-    setCurrentStep("Invio richiesta n8n");
+    setCurrentStep("Preparazione pipeline");
     setProgress(4);
     setStepStates({ input: "active" });
+    if (!demoMode) {
+      setArchiveInsights([]);
+    }
 
     const requestPayload = buildN8nPayload({
       pdfPath: pdf.name,
@@ -675,13 +816,18 @@ export default function App() {
     try {
       let response;
       if (demoMode) {
-        await replayDemoTimeline(pdf.name);
-        response = buildDemoResponse(
-          selectedStyle,
-          pdf.name,
-          requestPayload.requestId,
-          demoScenario,
-        );
+        const demoPackage = createDemoPackage({
+          styleKey: selectedStyle,
+          customPrompt,
+          mediaHistory: demoMediaHistory,
+          demoRunCount,
+        });
+        setArchiveInsights(demoPackage.archiveInsights);
+        setDemoMediaHistory(demoPackage.updatedMediaHistory);
+        setLastDemoTheme(demoPackage.themeKey);
+        incrementDemoRunCount();
+        await replayDemoTimeline(pdf.name, demoPackage);
+        response = buildDemoResponse(requestPayload.requestId, demoPackage);
       } else {
         response = await processDocument(requestPayload, {
             webhookUrl: integrationSettings.webhookUrl,
@@ -733,10 +879,6 @@ export default function App() {
       }
       appendLog("success", "Validazione response completata.");
 
-      if (response?.demoAudioUrl) {
-        generatedAudioRef.current = response.demoAudioUrl;
-      }
-
       const inboundLogs = normalizeInboundLogs(response?.logs);
       if (inboundLogs.length) {
         appendLogs(inboundLogs);
@@ -745,7 +887,7 @@ export default function App() {
 
       const storyboardData = response?.data?.storyboard;
       const rawScenes = storyboardData?.scenes || [];
-      const fallbackAudioUrl = response?.demoAudioUrl || null;
+      const fallbackAudioUrl = null;
       const {
         scenes,
         warnings: fallbackWarnings,
@@ -773,6 +915,8 @@ export default function App() {
         storyboard: scenes,
         audioUrl: scenes[0]?.audioPath || null,
         audioDuration: totalDuration,
+        videoUrl: response?.data?.videoUrl || null,
+        videoPosterUrl: response?.data?.videoPosterUrl || null,
       });
       setAnalysis({ ...analysis, scenes });
       setStats({
@@ -855,7 +999,7 @@ export default function App() {
     setDemoScenario(nextSettings.demoScenario || "fast-success");
     appendLog(
       "info",
-      `Settings salvati. DemoMode=${nextSettings.demoMode ? "ON" : "OFF"} Scenario=${nextSettings.demoScenario || "fast-success"} Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl}`,
+      `Impostazioni aggiornate. Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl}`,
     );
   };
 
@@ -865,10 +1009,26 @@ export default function App() {
       timeoutMs: settings.requestTimeoutMs,
     });
 
-  const handleExport = (kind) => {
+  const handleExport = (kind, options = {}) => {
+    if (kind === "all") {
+      (options.kinds || []).forEach((selectedKind, index) => {
+        window.setTimeout(() => {
+          handleExport(selectedKind, options);
+        }, index * 180);
+      });
+      return;
+    }
+
     const exportUrls = lastResponsePayload?.data?.exports || {};
+    const selectedSceneAudio =
+      options.selectedScene?.audioDownloadUrl || options.selectedScene?.audioPath || null;
     const firstPlayableAudio =
-      output.storyboard.find((scene) => scene.audioPath)?.audioPath || output.audioUrl || null;
+      output.storyboard.find((scene) => scene.audioDownloadUrl || scene.audioPath)?.audioDownloadUrl ||
+      output.storyboard.find((scene) => scene.audioDownloadUrl || scene.audioPath)?.audioPath ||
+      output.audioUrl ||
+      null;
+    const resolvedAudioUrl = selectedSceneAudio || firstPlayableAudio;
+    const resolvedVideoUrl = exportUrls.videoUrl || output.videoUrl || null;
 
     if (kind === "storyboard") {
       downloadTextFile(
@@ -878,24 +1038,24 @@ export default function App() {
       );
     }
     if (kind === "audio") {
-      if (!firstPlayableAudio) {
+      if (!resolvedAudioUrl) {
         appendLog("warning", "Nessun file audio disponibile per il download.");
       } else {
         void downloadUrlFile(
-          firstPlayableAudio,
-          `edugen-narration.${guessExtensionFromUrl(firstPlayableAudio, "mp3")}`,
+          resolvedAudioUrl,
+          `edugen-narration.${guessExtensionFromUrl(resolvedAudioUrl, "mp3")}`,
         ).catch((error) => {
           appendLog("error", `Download audio fallito: ${getErrorMessage(error)}`);
         });
       }
     }
     if (kind === "video") {
-      if (!exportUrls.videoUrl) {
+      if (!resolvedVideoUrl) {
         appendLog("warning", "Il backend non ha fornito un export video.");
       } else {
         void downloadUrlFile(
-          exportUrls.videoUrl,
-          `edugen-video.${guessExtensionFromUrl(exportUrls.videoUrl, "mp4")}`,
+          resolvedVideoUrl,
+          `edugen-video.${guessExtensionFromUrl(resolvedVideoUrl, "mp4")}`,
         ).catch((error) => {
           appendLog("error", `Download video fallito: ${getErrorMessage(error)}`);
         });
@@ -949,35 +1109,20 @@ export default function App() {
         "application/json;charset=utf-8",
       );
     }
-    if (kind === "all") {
-      return;
-    }
     setIsExportMenuOpen(false);
-  };
-
-  const handlePanelExport = (kind, selectedKinds = []) => {
-    if (kind !== "all") {
-      handleExport(kind);
-      return;
-    }
-
-    selectedKinds.forEach((selectedKind, index) => {
-      window.setTimeout(() => {
-        handleExport(selectedKind);
-      }, index * 180);
-    });
   };
 
   const exportAvailability = useMemo(
     () => ({
       storyboard: output.storyboard.length > 0,
       audio: Boolean(
-        output.audioUrl || output.storyboard.some((scene) => scene.audioPath),
+        output.audioUrl ||
+          output.storyboard.some((scene) => scene.audioPath || scene.audioDownloadUrl),
       ),
-      video: Boolean(lastResponsePayload?.data?.exports?.videoUrl),
+      video: Boolean(lastResponsePayload?.data?.exports?.videoUrl || output.videoUrl),
       package: Boolean(lastResponsePayload?.data?.exports?.packageUrl),
     }),
-    [lastResponsePayload, output.audioUrl, output.storyboard],
+    [lastResponsePayload, output.audioUrl, output.storyboard, output.videoUrl],
   );
 
   return (
@@ -1018,14 +1163,18 @@ export default function App() {
               analysis={analysis}
               selectedStyle={selectedStyle}
               selectedVideoPreset={selectedVideoPreset}
+              customPrompt={customPrompt}
+              archiveInsights={archiveInsights}
               onStyleChange={setSelectedStyle}
               onVideoPresetChange={setSelectedVideoPreset}
+              onCustomPromptChange={setCustomPrompt}
               onFilePicked={handleFilePicked}
               onUseDemoPdf={handleUseDemoPdf}
               onRemoveFile={handleRemoveFile}
               onGenerate={handleGenerate}
               pipelineStatus={pipeline.status}
               progress={pipeline.progress}
+              demoMode={demoMode}
             />
             <PipelineVisualizer
               steps={pipeline.steps}
@@ -1035,10 +1184,13 @@ export default function App() {
             <OutputPanel
               scenes={output.storyboard}
               audioUrl={output.audioUrl}
+              videoUrl={output.videoUrl}
+              videoPosterUrl={output.videoPosterUrl}
               loading={pipeline.status === "processing"}
               warnings={warnings}
+              archiveInsights={archiveInsights}
               exportAvailability={exportAvailability}
-              onExport={handlePanelExport}
+              onExport={handleExport}
             />
           </main>
 

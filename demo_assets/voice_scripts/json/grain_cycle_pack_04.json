@@ -1,0 +1,13 @@
+{
+  "packId": "grain_cycle_pack_04",
+  "theme": "grain-cycle",
+  "style": "flash",
+  "scenes": [
+    { "sceneNumber": 1, "title": "Si semina", "script": "Il ciclo del grano parte dalla semina: i chicchi entrano nel terreno e trovano le condizioni per avviare una nuova crescita." },
+    { "sceneNumber": 2, "title": "Il seme germoglia", "script": "Con acqua e calore, il seme si attiva. Il primo germoglio rompe il rivestimento e inizia lo sviluppo della pianta." },
+    { "sceneNumber": 3, "title": "La pianta cresce", "script": "Il grano forma fusto e foglie, si irrobustisce e costruisce la struttura che sosterra la spiga." },
+    { "sceneNumber": 4, "title": "Arriva la spiga", "script": "La spiga emerge e rende visibile il cuore produttivo della pianta. Il campo comincia a cambiare aspetto." },
+    { "sceneNumber": 5, "title": "Il grano matura", "script": "I chicchi si riempiono, il colore vira verso il dorato e la pianta convoglia energia verso il raccolto." },
+    { "sceneNumber": 6, "title": "Si raccoglie", "script": "Con la mietitura termina il ciclo agricolo: il grano lascia il campo ed entra nella fase di trasformazione." }
+  ]
+}

@@ -1,3 +1,4 @@
+import CustomPrompt from "./CustomPrompt";
 import GenerateButton from "./GenerateButton";
 import Metadata from "./Metadata";
 import PDFUploader from "./PDFUploader";
@@ -9,14 +10,18 @@ export default function InputPanel({
   analysis,
   selectedStyle,
   selectedVideoPreset,
+  customPrompt,
+  archiveInsights,
   onStyleChange,
   onVideoPresetChange,
+  onCustomPromptChange,
   onFilePicked,
   onUseDemoPdf,
   onRemoveFile,
   onGenerate,
   pipelineStatus,
   progress,
+  demoMode = false,
 }) {
   return (
     <aside className="scroll-thin h-full overflow-y-auto pr-1">
@@ -27,7 +32,6 @@ export default function InputPanel({
         onRemove={onRemoveFile}
         disabled={pipelineStatus === "processing"}
       />
-      <Metadata pdf={pdf} analysis={analysis} />
       <StyleEngine
         selected={selectedStyle}
         onChange={onStyleChange}
@@ -38,10 +42,17 @@ export default function InputPanel({
         onChange={onVideoPresetChange}
         disabled={pipelineStatus === "processing"}
       />
+      <CustomPrompt
+        value={customPrompt}
+        onChange={onCustomPromptChange}
+        disabled={pipelineStatus === "processing"}
+      />
+      <Metadata pdf={pdf} analysis={analysis} archiveInsights={archiveInsights} />
       <GenerateButton
         canGenerate={Boolean(pdf.file)}
         status={pipelineStatus}
         progress={progress}
+        demoMode={demoMode}
         onClick={onGenerate}
       />
     </aside>

@@ -1,19 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import AudioPlayer from "./AudioPlayer";
 import ExportOptions from "./ExportOptions";
+import ImageLightbox from "./ImageLightbox";
 import Storyboard from "./Storyboard";
+import VideoPreview from "./VideoPreview";
 
 export default function OutputPanel({
   scenes,
   audioUrl,
+  videoUrl,
+  videoPosterUrl,
   loading,
   warnings = [],
+  archiveInsights = [],
   exportAvailability,
   onExport,
 }) {
-  const hasOutput = scenes.length > 0 || Boolean(audioUrl);
+  const hasOutput = scenes.length > 0 || Boolean(audioUrl) || Boolean(videoUrl);
   const [selectedSceneId, setSelectedSceneId] = useState(null);
   const [warningsOpen, setWarningsOpen] = useState(false);
+  const [lightboxScene, setLightboxScene] = useState(null);
 
   useEffect(() => {
     if (!scenes.length) {
@@ -36,6 +42,8 @@ export default function OutputPanel({
     setSelectedSceneId(scenes[index].id);
   };
 
+  const selectedScene = scenes[selectedSceneIndex] || null;
+
   return (
     <aside className="scroll-thin h-full overflow-y-auto pr-1">
       <Storyboard
@@ -43,6 +51,8 @@ export default function OutputPanel({
         isLoading={loading}
         selectedSceneId={selectedSceneId}
         onSelectScene={setSelectedSceneId}
+        onOpenLightbox={setLightboxScene}
+        archiveInsights={archiveInsights}
       />
       {warnings.length ? (
         <section className="panel mt-3 p-3">
@@ -79,10 +89,27 @@ export default function OutputPanel({
         onSelectSceneIndex={handleSelectSceneIndex}
         fallbackAudioUrl={audioUrl}
       />
+      <VideoPreview
+        videoUrl={videoUrl}
+        posterUrl={videoPosterUrl}
+        loading={loading}
+        onDownload={() =>
+          onExport?.("video", {
+            selectedScene,
+            source: "video-preview",
+          })
+        }
+      />
       <ExportOptions
         enabled={hasOutput}
         exportAvailability={exportAvailability}
+        selectedScene={selectedScene}
         onExport={onExport}
+      />
+      <ImageLightbox
+        open={Boolean(lightboxScene)}
+        scene={lightboxScene}
+        onClose={() => setLightboxScene(null)}
       />
     </aside>
   );

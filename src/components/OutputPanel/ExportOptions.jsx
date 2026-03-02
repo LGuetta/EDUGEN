@@ -2,13 +2,18 @@ import { Download } from "lucide-react";
 import { useState } from "react";
 
 const EXPORT_FORMATS = [
-  { id: "storyboard", label: "Storyboard PDF", size: "~2.4 MB", checked: true },
+  { id: "storyboard", label: "Storyboard JSON", size: "~2.4 MB", checked: true },
   { id: "audio", label: "Audio MP3", size: "~4.1 MB", checked: true },
   { id: "video", label: "Video MP4", size: "~24 MB", checked: false },
   { id: "package", label: "Full Package", size: "~32 MB", checked: false },
 ];
 
-export default function ExportOptions({ enabled, exportAvailability = {}, onExport }) {
+export default function ExportOptions({
+  enabled,
+  exportAvailability = {},
+  selectedScene = null,
+  onExport,
+}) {
   const [formats, setFormats] = useState(EXPORT_FORMATS);
 
   const toggle = (id) =>
@@ -38,7 +43,7 @@ export default function ExportOptions({ enabled, exportAvailability = {}, onExpo
               </label>
               <button
                 type="button"
-                onClick={() => onExport?.(format.id)}
+                onClick={() => onExport?.(format.id, { selectedScene, source: "panel" })}
                 className={`rounded border p-1.5 ${
                   canDownload(format.id)
                     ? "border-borderAccent text-textSecondary hover:bg-bgHover hover:text-white"
@@ -55,7 +60,13 @@ export default function ExportOptions({ enabled, exportAvailability = {}, onExpo
       </div>
       <button
         type="button"
-        onClick={() => onExport?.("all", selectedFormats.map((format) => format.id))}
+        onClick={() =>
+          onExport?.("all", {
+            kinds: selectedFormats.map((format) => format.id),
+            selectedScene,
+            source: "panel",
+          })
+        }
         disabled={!selectedFormats.length}
         className={`mt-3 w-full rounded-md border px-3 py-2 text-xs font-semibold tracking-[0.08em] ${
           selectedFormats.length

@@ -5,7 +5,7 @@ const entry = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
-export default function Metadata({ pdf, analysis }) {
+export default function Metadata({ pdf, analysis, archiveInsights = [] }) {
   if (!pdf.file) return null;
 
   return (
@@ -22,6 +22,34 @@ export default function Metadata({ pdf, analysis }) {
         <Row label="Subject" value={analysis.subject} highlight />
         <Row label="Language" value={analysis.language} />
         <Row label="Complexity" value={analysis.complexity} />
+        <div className="rounded-md border border-borderPrimary bg-bgPrimary/45 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-textSecondary">Archivio Vivo</span>
+            <span className="rounded-full border border-emerald-400/35 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+              Connesso
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-textMuted">
+            Supporto documentale e suggerimenti per la generazione
+          </p>
+          <p className="mt-2 text-[11px] font-medium text-accentInfo">
+            + riferimenti contestuali
+          </p>
+          {archiveInsights.length ? (
+            <div className="mt-2 space-y-1">
+              {archiveInsights.slice(0, 3).map((insight) => (
+                <div key={insight.id} className="rounded-md bg-bgPrimary/55 px-2 py-1.5">
+                  <p className="text-[11px] font-medium text-textPrimary">{insight.label}</p>
+                  {insight.description ? (
+                    <p className="mt-0.5 text-[10px] leading-relaxed text-textMuted">
+                      {insight.description}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
     </motion.section>
   );

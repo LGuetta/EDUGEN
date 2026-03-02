@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 
 const cardEntrance = {
   hidden: { opacity: 0, y: 20 },
@@ -10,6 +11,13 @@ const cardEntrance = {
 };
 
 export default function SceneCard({ scene, index, onClick, active }) {
+  const [failedPrimary, setFailedPrimary] = useState(false);
+  const resolvedImage = useMemo(() => {
+    const [primary, fallback] = scene.imageSources || [scene.imageUrl, scene.fallbackImageUrl];
+    if (failedPrimary && fallback) return fallback;
+    return primary || fallback || scene.imageUrl;
+  }, [failedPrimary, scene.fallbackImageUrl, scene.imageSources, scene.imageUrl]);
+
   return (
     <motion.button
       custom={index}
@@ -24,7 +32,12 @@ export default function SceneCard({ scene, index, onClick, active }) {
           : "border-borderPrimary hover:border-borderAccent hover:bg-bgHover/40"
       }`}
     >
-      <img src={scene.imageUrl} alt={scene.title} className="h-24 w-full object-cover" />
+      <img
+        src={resolvedImage}
+        alt={scene.title}
+        className="h-24 w-full object-cover"
+        onError={() => setFailedPrimary(true)}
+      />
       <div className="space-y-1 p-2">
         <p className="text-[11px] text-textMuted">Scene {scene.number}</p>
         <p className="truncate text-xs font-medium text-textPrimary">{scene.title}</p>
