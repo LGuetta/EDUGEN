@@ -188,6 +188,59 @@ function sleep(duration) {
   return new Promise((resolve) => window.setTimeout(resolve, duration));
 }
 
+async function resolveExistingMediaSource(sources = []) {
+  const uniqueSources = [...new Set((sources || []).filter(Boolean))];
+
+  for (const source of uniqueSources) {
+    if (typeof source !== "string" || !source.trim()) continue;
+
+    if (source.startsWith("data:")) {
+      return source;
+    }
+
+    try {
+      const response = await fetch(source, { method: "GET", cache: "no-store" });
+      if (response.ok) {
+        return source;
+      }
+    } catch {
+      // Ignore missing assets and keep probing the remaining candidates.
+    }
+  }
+
+  return null;
+}
+
+async function resolveDemoPackageMedia(demoPackage) {
+  const scenes = await Promise.all(
+    demoPackage.scenes.map(async (scene) => {
+      const resolvedImage = await resolveExistingMediaSource(scene.imageSources);
+      const imageSources = resolvedImage
+        ? [resolvedImage, ...(scene.imageSources || []).filter((source) => source !== resolvedImage)]
+        : scene.imageSources || [];
+      const resolvedAudio = await resolveExistingMediaSource(scene.audioSources);
+      const audioSources = resolvedAudio
+        ? [resolvedAudio, ...(scene.audioSources || []).filter((source) => source !== resolvedAudio)]
+        : scene.audioSources || [];
+
+      return {
+        ...scene,
+        imageUrl: resolvedImage || scene.fallbackImageUrl || scene.imageUrl,
+        imageSources,
+        audioPath: resolvedAudio || scene.audioPath || null,
+        audioDownloadUrl: resolvedAudio || scene.audioDownloadUrl || scene.audioPath || null,
+        preferredAudioPath: resolvedAudio || scene.preferredAudioPath || null,
+        audioSources,
+      };
+    }),
+  );
+
+  return {
+    ...demoPackage,
+    scenes,
+  };
+}
+
 function computeBattute(scenes) {
   return scenes.reduce((total, scene) => total + (scene.narrationScript?.length || 0), 0);
 }
@@ -830,12 +883,13 @@ export default function App() {
     try {
       let response;
       if (demoMode) {
-        const demoPackage = createDemoPackage({
+        const rawDemoPackage = createDemoPackage({
           styleKey: selectedStyle,
           customPrompt,
           mediaHistory: demoMediaHistory,
           demoRunCount,
         });
+        const demoPackage = await resolveDemoPackageMedia(rawDemoPackage);
         setArchiveInsights(demoPackage.archiveInsights);
         setDemoMediaHistory(demoPackage.updatedMediaHistory);
         setLastDemoTheme(demoPackage.themeKey);
