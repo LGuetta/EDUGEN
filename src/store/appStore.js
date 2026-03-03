@@ -58,7 +58,7 @@ export const useAppStore = create((set) => ({
     preview: null,
   },
   analysis: defaultAnalysis,
-  selectedStyle: "storia",
+  selectedStyle: "acquarello",
   selectedVideoPreset: "didattico",
   pipeline: {
     status: "idle",

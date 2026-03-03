@@ -618,7 +618,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
-  const styleLabel = STYLE_LABELS[selectedStyle] || "Storia";
+  const styleLabel = STYLE_LABELS[selectedStyle] || "Acquarello";
   const statusLabel = useMemo(() => titleCase(pipeline.status), [pipeline.status]);
   const resolvedIntegrationSettings = useMemo(
     () => ({
@@ -898,25 +898,25 @@ export default function App() {
         response = buildDemoResponse(requestPayload.requestId, demoPackage);
       } else {
         response = await processDocument(requestPayload, {
-            webhookUrl: integrationSettings.webhookUrl,
-            timeoutMs: integrationSettings.requestTimeoutMs,
-            onAttempt: ({ attempt, totalAttempts, retrying, webhookUrl, timeoutMs }) => {
-              if (retrying) {
-                appendLog(
-                  "warning",
-                  `Retry ${attempt}/${totalAttempts} verso ${webhookUrl} (timeout ${timeoutMs}ms)`,
-                );
-                return;
-              }
+          webhookUrl: integrationSettings.webhookUrl,
+          timeoutMs: integrationSettings.requestTimeoutMs,
+          onAttempt: ({ attempt, totalAttempts, retrying, webhookUrl, timeoutMs }) => {
+            if (retrying) {
               appendLog(
-                "info",
-                `Richiesta inviata a ${webhookUrl} (timeout ${timeoutMs}ms)`,
+                "warning",
+                `Retry ${attempt}/${totalAttempts} verso ${webhookUrl} (timeout ${timeoutMs}ms)`,
               );
-            },
-            onResponse: ({ status, attempt }) => {
-              appendLog("info", `Response ricevuta da n8n (HTTP ${status}, attempt ${attempt})`);
-            },
-          });
+              return;
+            }
+            appendLog(
+              "info",
+              `Richiesta inviata a ${webhookUrl} (timeout ${timeoutMs}ms)`,
+            );
+          },
+          onResponse: ({ status, attempt }) => {
+            appendLog("info", `Response ricevuta da n8n (HTTP ${status}, attempt ${attempt})`);
+          },
+        });
       }
 
       responsePayload = response;
@@ -1186,7 +1186,7 @@ export default function App() {
       storyboard: output.storyboard.length > 0,
       audio: Boolean(
         output.audioUrl ||
-          output.storyboard.some((scene) => scene.audioPath || scene.audioDownloadUrl),
+        output.storyboard.some((scene) => scene.audioPath || scene.audioDownloadUrl),
       ),
       video: Boolean(lastResponsePayload?.data?.exports?.videoUrl || output.videoUrl),
       package: Boolean(lastResponsePayload?.data?.exports?.packageUrl),
@@ -1221,11 +1221,10 @@ export default function App() {
 
       <div className="mx-auto h-[calc(100%-60px)] w-full max-w-[1920px] px-4 pb-3 pt-4">
         <div
-          className={`grid h-full gap-3 ${
-            isLogCollapsed
+          className={`grid h-full gap-3 ${isLogCollapsed
               ? "grid-rows-[minmax(0,1fr)_40px_48px]"
               : "grid-rows-[minmax(0,1fr)_180px_48px]"
-          }`}
+            }`}
         >
           <main className="grid min-h-0 grid-cols-[300px_1fr_340px] gap-4">
             <InputPanel

@@ -2,17 +2,17 @@ import { FlaskConical, Landmark, Palette, Wrench } from "lucide-react";
 
 const STYLE_OPTIONS = [
   {
-    id: "storia",
+    id: "acquarello",
     title: "Acquarello",
     icon: Landmark,
   },
   {
-    id: "scienze",
+    id: "vettoriale",
     title: "Vettoriale",
     icon: FlaskConical,
   },
   {
-    id: "arte",
+    id: "fotorealistico",
     title: "Fotorealistico",
     icon: Palette,
   },
@@ -37,11 +37,10 @@ export default function StyleEngine({ selected, onChange, disabled }) {
           return (
             <label
               key={style.id}
-              className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition ${
-                checked
+              className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition ${checked
                   ? "border-accentPrimary bg-accentPrimary/10"
                   : "border-borderPrimary bg-bgPrimary/35 hover:border-borderAccent"
-              } ${isDisabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
+                } ${isDisabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
             >
               <input
                 type="radio"
