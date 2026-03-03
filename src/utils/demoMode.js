@@ -146,17 +146,17 @@ export function createDemoPackage({ styleKey, customPrompt, mediaHistory, demoRu
 const NOMINAL_MS = 12000;
 
 const TIMELINE_STEPS = [
-  { stepId: "input", currentStep: "PDF Input", type: "info", message: "PDF caricato. Avvio pipeline EDUGEN." },
-  { stepId: "parsing", currentStep: "Parse request", type: "info", message: "Analisi struttura documento in corso..." },
-  { stepId: "llm", currentStep: "Analisi LLM", type: "info", message: "Segmentazione tematica LLM completata.", tokens: 1847 },
-  { stepId: "archive", currentStep: "Archivio Vivo", type: "info", message: "Archivio Vivo: 3 riferimenti contestuali trovati.", archiveOnly: true },
-  { stepId: "style", currentStep: "Style prompt", type: "info", message: "Definizione impianto narrativo completata." },
-  { stepId: "lora", currentStep: "LoRA select", type: "info", message: "Selezione varianti visive LoRA completata." },
-  { stepId: "controlnet", currentStep: "ControlNet", type: "info", message: "Consolidamento composizione visiva ok." },
-  { stepId: "image", currentStep: "Generazione immagini", type: "success", message: "Set immagini generato. 5 scene pronte.", scenesGenerated: 5 },
-  { stepId: "voice", currentStep: "Voice synth", type: "success", message: "Tracce audio selezionate e validate." },
-  { stepId: "video", currentStep: "Video compose", type: "info", message: "Video output in preparazione." },
-  { stepId: "output", currentStep: "Aggregate output", type: "success", message: "Pipeline completata. Output disponibile.", isFinal: true },
+  { stepId: "input", currentStep: "PDF Input", type: "info", message: "PDF ricevuto. Dimensione: 1.5 MB · 8 pagine rilevate. Avvio estrazione testo." },
+  { stepId: "parsing", currentStep: "Parse request", type: "info", message: "Struttura documento analizzata. Identificati 3 blocchi tematici principali. Token raw: 3.841." },
+  { stepId: "llm", currentStep: "Analisi LLM", type: "info", message: "GPT-4o completato. Segmentazione in 5 scene. Token totali: 1.847 (prompt: 1.203 · completion: 644).", tokens: 1847 },
+  { stepId: "archive", currentStep: "Archivio Vivo", type: "info", message: "[BYPASS] Archivio Vivo in fase di test — modulo disattivato per questa sessione.", archiveOnly: true },
+  { stepId: "style", currentStep: "Style prompt", type: "info", message: "Prompt visivo costruito. Stile selezionato applicato. Seed: 4827193. Negative prompt: 12 token." },
+  { stepId: "lora", currentStep: "LoRA select", type: "info", message: "Checkpoint LoRA caricato (zanichelli-v2.safetensors · 4.1 GB). Peso applicato: 0.82." },
+  { stepId: "controlnet", currentStep: "ControlNet", type: "info", message: "ControlNet depth attivo. Mappa di profondità generata per 5 composizioni. Soglia: 0.65." },
+  { stepId: "image", currentStep: "Generazione immagini", type: "success", message: "Image gen completata. 5/5 scene · 512×512 px · 28 step DDIM · CFG 7.5. Tempo medio: 4.2 s/imm.", scenesGenerated: 5 },
+  { stepId: "voice", currentStep: "Voice synth", type: "success", message: "TTS completato. Set audio selezionato. 5 tracce validate (MP3 · 128 kbps · 44.1 kHz)." },
+  { stepId: "video", currentStep: "Video compose", type: "info", message: "Composizione video in corso. Frame rate: 24 fps · Risoluzione: 1920×1080 · Codec: H.264." },
+  { stepId: "output", currentStep: "Aggregate output", type: "success", message: "Pipeline completata. Package pronto: 5 scene · storyboard JSON · audio · video preview disponibile.", isFinal: true },
 ];
 
 export function buildDemoTimeline({ includeArchive = true } = {}) {
