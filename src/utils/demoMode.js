@@ -104,9 +104,16 @@ const DEFAULT_THEME = "grain-cycle";
 const IMAGE_VARIANT_COUNT = 4;
 const AUDIO_SET_COUNT = 5;
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"];
+const AUDIO_EXTENSIONS = ["mp3", "MP3"];
+const AUDIO_SET_CANDIDATES = [1, 2, 3, 4, 5, 6];
 
 function getStylePreset(styleKey) {
   return STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
+}
+
+function getOrderedStyleKeys(styleKey) {
+  const styleKeys = Object.keys(STYLE_PRESETS);
+  return [styleKey, ...styleKeys.filter((candidate) => candidate !== styleKey)];
 }
 
 function createSceneDataUrl(sceneNumber, title, colors, variantIndex = 1) {
@@ -200,19 +207,34 @@ function buildDemoImageSources(styleKey, sceneNumber, variantIndex) {
       (candidate) => candidate !== variantIndex,
     ),
   ];
+  const orderedStyles = getOrderedStyleKeys(styleKey);
 
-  return orderedVariants.flatMap((candidate) => {
-    const variantBase = `variant_${String(candidate).padStart(2, "0")}`;
-    return IMAGE_EXTENSIONS.map(
-      (extension) => `/assets/${styleKey}/${sceneSlug}/${variantBase}.${extension}`,
-    );
-  });
+  return orderedVariants.flatMap((candidate) =>
+    orderedStyles.flatMap((resolvedStyleKey) => {
+      const variantBase = `variant_${String(candidate).padStart(2, "0")}`;
+      return IMAGE_EXTENSIONS.map(
+        (extension) => `/assets/${resolvedStyleKey}/${sceneSlug}/${variantBase}.${extension}`,
+      );
+    }),
+  );
 }
 
-function buildDemoAudioPath(styleKey, audioSetIndex, sceneNumber) {
-  const setSlug = `audio_set_${String(audioSetIndex).padStart(2, "0")}`;
-  const trackSlug = `narration_${String(sceneNumber).padStart(2, "0")}.mp3`;
-  return `/assets/${styleKey}/${setSlug}/${trackSlug}`;
+function buildDemoAudioSources(styleKey, audioSetIndex, sceneNumber) {
+  const orderedStyles = getOrderedStyleKeys(styleKey);
+  const orderedSets = [
+    audioSetIndex,
+    ...AUDIO_SET_CANDIDATES.filter((candidate) => candidate !== audioSetIndex),
+  ];
+  const trackBase = `narration_${String(sceneNumber).padStart(2, "0")}`;
+
+  return orderedSets.flatMap((setId) =>
+    orderedStyles.flatMap((resolvedStyleKey) => {
+      const setSlug = `audio_set_${String(setId).padStart(2, "0")}`;
+      return AUDIO_EXTENSIONS.map(
+        (extension) => `/assets/${resolvedStyleKey}/${setSlug}/${trackBase}.${extension}`,
+      );
+    }),
+  );
 }
 
 export function getDemoVideoUrl(styleKey) {
@@ -376,7 +398,8 @@ export function createDemoPackage({
     );
     const imageSources = buildDemoImageSources(styleKey, scene.number, variantIndex);
     const imagePath = imageSources[0];
-    const preferredAudioPath = buildDemoAudioPath(styleKey, audioSet, scene.number);
+    const preferredAudioSources = buildDemoAudioSources(styleKey, audioSet, scene.number);
+    const preferredAudioPath = preferredAudioSources[0] || null;
 
     return {
       id: `scene_${scene.number}`,
@@ -388,9 +411,9 @@ export function createDemoPackage({
       imageSources: [...imageSources, fallbackImageUrl],
       fallbackImageUrl,
       imageVariantKey: `variant_${String(variantIndex).padStart(2, "0")}`,
-      audioPath: fallbackAudioUrl,
-      audioSources: [preferredAudioPath, fallbackAudioUrl],
-      audioDownloadUrl: fallbackAudioUrl,
+      audioPath: preferredAudioPath || fallbackAudioUrl,
+      audioSources: [...preferredAudioSources, fallbackAudioUrl],
+      audioDownloadUrl: preferredAudioPath || fallbackAudioUrl,
       preferredAudioPath,
       audioSetKey: `audio_set_${String(audioSet).padStart(2, "0")}`,
     };

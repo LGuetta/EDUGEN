@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Download, Pause, Play, Volume2 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAudioPlayer } from "../../hooks/useAudioPlayer";
 
 function formatClock(value) {
@@ -17,9 +17,31 @@ export default function AudioPlayer({
 }) {
   const safeIndex = Math.max(0, Math.min(selectedSceneIndex, scenes.length - 1));
   const selectedScene = scenes[safeIndex] || null;
-  const selectedAudioUrl =
-    selectedScene?.audioPath || selectedScene?.audioDownloadUrl || fallbackAudioUrl || null;
   const hasMultiSceneAudio = scenes.length > 1;
+  const audioSources = useMemo(() => {
+    if (!selectedScene) {
+      return fallbackAudioUrl ? [fallbackAudioUrl] : [];
+    }
+
+    const explicitSources = selectedScene.audioSources?.filter(Boolean) || [];
+    if (explicitSources.length) {
+      return explicitSources;
+    }
+
+    return [
+      selectedScene.audioPath,
+      selectedScene.audioDownloadUrl,
+      fallbackAudioUrl,
+    ].filter(Boolean);
+  }, [fallbackAudioUrl, selectedScene]);
+  const [audioIndex, setAudioIndex] = useState(0);
+  const audioSourceKey = audioSources.join("|");
+
+  useEffect(() => {
+    setAudioIndex(0);
+  }, [audioSourceKey, selectedScene?.id]);
+
+  const selectedAudioUrl = audioSources[audioIndex] || null;
 
   const narrationLabel = useMemo(() => {
     if (!selectedScene) return "Nessuna traccia caricata";
@@ -40,10 +62,21 @@ export default function AudioPlayer({
 
   const disabled = !selectedAudioUrl || hasMediaError;
 
+  const handleAudioError = () => {
+    if (audioIndex < audioSources.length - 1) {
+      setAudioIndex((current) => current + 1);
+    }
+  };
+
   return (
     <section className="panel mt-3 p-3">
       <p className="section-title mb-3">NARRAZIONE</p>
-      <audio ref={audioRef} src={selectedAudioUrl ?? undefined} preload="metadata" />
+      <audio
+        ref={audioRef}
+        src={selectedAudioUrl ?? undefined}
+        preload="metadata"
+        onError={handleAudioError}
+      />
 
       <div className="rounded-lg border border-borderPrimary bg-bgPrimary/50 p-3">
         <p className="mb-2 truncate text-[11px] text-textSecondary">{narrationLabel}</p>
@@ -121,7 +154,7 @@ export default function AudioPlayer({
             disabled={disabled}
           />
           <a
-            href={(selectedScene?.audioDownloadUrl || selectedAudioUrl) ?? undefined}
+            href={(selectedAudioUrl || selectedScene?.audioDownloadUrl) ?? undefined}
             download={`narrazione-scena-${selectedScene?.number || 1}.wav`}
             className={`grid h-8 w-8 place-items-center rounded border ${
               disabled
