@@ -6,6 +6,13 @@ const entry = {
 };
 
 export default function CustomPrompt({ value, onChange, disabled }) {
+  const inputStyle = {
+    backgroundColor: "rgba(10, 10, 15, 0.96)",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    caretColor: "#ffffff",
+  };
+
   return (
     <motion.section
       variants={entry}
@@ -34,10 +41,13 @@ export default function CustomPrompt({ value, onChange, disabled }) {
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value.slice(0, 220))}
-        placeholder="Es. Concentrati solo sul ciclo del grano"
+        placeholder="Es. Evidenzia i passaggi piu rilevanti per l'argomento"
         disabled={disabled}
         rows={3}
-        className="w-full resize-none rounded-lg border border-borderPrimary bg-bgPrimary/55 px-3 py-2 text-sm text-textPrimary outline-none transition placeholder:text-textMuted focus:border-accentPrimary/70 disabled:cursor-not-allowed disabled:opacity-60"
+        spellCheck={false}
+        autoComplete="off"
+        className="settings-input w-full resize-none rounded-lg border border-borderPrimary px-3 py-2 text-sm text-textPrimary outline-none transition placeholder:text-textMuted focus:border-accentPrimary/70 disabled:cursor-not-allowed disabled:opacity-60"
+        style={inputStyle}
       />
     </motion.section>
   );
