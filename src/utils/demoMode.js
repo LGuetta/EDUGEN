@@ -89,37 +89,30 @@ function buildAudioCandidates(styleKey, sceneNumber, preferredSet) {
   return preferredOrder.flatMap((setName) => AUDIO_EXTENSIONS.map((ext) => `/assets/${styleKey}/${setName}/${fileName}.${ext}`));
 }
 
-export function createDemoPackage({ styleKey, customPrompt, mediaHistory }) {
+export function createDemoPackage({ styleKey, customPrompt, mediaHistory, demoRunCount = 0 }) {
   const themeKey = resolveDemoTheme(customPrompt);
   const theme = DEMO_THEMES[themeKey];
   const nextHistory = { ...(mediaHistory || {}) };
   const styleHistory = nextHistory[styleKey] || {};
 
+  // Image variant: toggles deterministically between variant_01 (even runs) and variant_02 (odd runs).
+  // This makes every single Regen visibly switch all images at once, giving a clear "regenerated" feel.
+  const selectedVariant = demoRunCount % 2 === 0 ? "variant_01" : "variant_02";
+
+  // Audio set: pool-based rotation so each regen uses a different voice take.
   const audioHistory = styleHistory.audio || { usedSets: [], lastSet: null };
   const audioSelection = nextFromPool(DEMO_AUDIO_SETS, audioHistory.usedSets, audioHistory.lastSet);
   const selectedAudioSet = audioSelection.selected;
 
-  const scenes = theme.scenes.map((scene) => {
-    const sceneKey = `scene_${String(scene.number).padStart(2, "0")}`;
-    const sceneHistory = styleHistory[sceneKey] || { usedVariants: [], lastVariant: null };
-    const imageSelection = nextFromPool(DEMO_IMAGE_VARIANTS, sceneHistory.usedVariants, sceneHistory.lastVariant);
-    const selectedVariant = imageSelection.selected;
-
-    styleHistory[sceneKey] = {
-      usedVariants: imageSelection.nextUsed,
-      lastVariant: selectedVariant,
-    };
-
-    return {
-      ...scene,
-      imageVariant: selectedVariant,
-      imageUrl: buildImageCandidates(styleKey, scene.number, selectedVariant)[0],
-      imageSources: buildImageCandidates(styleKey, scene.number, selectedVariant),
-      audioSet: selectedAudioSet,
-      audioPath: buildAudioCandidates(styleKey, scene.number, selectedAudioSet)[0],
-      audioSources: buildAudioCandidates(styleKey, scene.number, selectedAudioSet),
-    };
-  });
+  const scenes = theme.scenes.map((scene) => ({
+    ...scene,
+    imageVariant: selectedVariant,
+    imageUrl: buildImageCandidates(styleKey, scene.number, selectedVariant)[0],
+    imageSources: buildImageCandidates(styleKey, scene.number, selectedVariant),
+    audioSet: selectedAudioSet,
+    audioPath: buildAudioCandidates(styleKey, scene.number, selectedAudioSet)[0],
+    audioSources: buildAudioCandidates(styleKey, scene.number, selectedAudioSet),
+  }));
 
   styleHistory.audio = {
     usedSets: audioSelection.nextUsed,
@@ -144,7 +137,7 @@ export function createDemoPackage({ styleKey, customPrompt, mediaHistory }) {
       scenes,
     },
     videoUrl: null,
-    mediaHistory: nextHistory,
+    updatedMediaHistory: nextHistory,
   };
 }
 
