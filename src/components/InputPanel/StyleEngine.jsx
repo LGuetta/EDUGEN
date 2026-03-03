@@ -3,26 +3,22 @@ import { FlaskConical, Landmark, Palette, Wrench } from "lucide-react";
 const STYLE_OPTIONS = [
   {
     id: "storia",
-    title: "Storia",
-    description: "Acquerello, mappe antiche",
+    title: "Acquarello",
     icon: Landmark,
   },
   {
     id: "scienze",
-    title: "Scienze",
-    description: "Vettoriale, flat design",
+    title: "Vettoriale",
     icon: FlaskConical,
   },
   {
     id: "arte",
-    title: "Arte",
-    description: "Fotografico, realistico",
+    title: "Fotorealistico",
     icon: Palette,
   },
   {
     id: "custom",
     title: "Custom LoRA",
-    description: "Coming soon",
     icon: Wrench,
     disabled: true,
   },
@@ -31,8 +27,7 @@ const STYLE_OPTIONS = [
 export default function StyleEngine({ selected, onChange, disabled }) {
   return (
     <section className="panel mt-3 p-4">
-      <p className="section-title mb-1">STYLE ENGINE</p>
-      <p className="mb-3 text-xs text-textMuted">LoRA Adapters</p>
+      <p className="section-title mb-3">STILE VISIVO</p>
 
       <div className="space-y-2">
         {STYLE_OPTIONS.map((style) => {
@@ -42,7 +37,6 @@ export default function StyleEngine({ selected, onChange, disabled }) {
           return (
             <label
               key={style.id}
-              title={style.description}
               className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition ${
                 checked
                   ? "border-accentPrimary bg-accentPrimary/10"
@@ -62,7 +56,6 @@ export default function StyleEngine({ selected, onChange, disabled }) {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-textPrimary">{style.title}</p>
-                <p className="truncate text-xs text-textMuted">{style.description}</p>
               </div>
             </label>
           );

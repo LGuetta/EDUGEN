@@ -30,7 +30,7 @@ const VIDEO_OPTIONS = [
 export default function VideoStructure({ selected, onChange, disabled }) {
   return (
     <section className="panel mt-3 p-4">
-      <p className="section-title mb-1">STRUTTURA VIDEO</p>
+      <p className="section-title mb-1">FORMAT VIDEO</p>
       <p className="mb-3 text-xs text-textMuted">Preset narrativo</p>
 
       <div className="space-y-2">
