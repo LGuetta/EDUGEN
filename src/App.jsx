@@ -515,6 +515,7 @@ export default function App() {
     isLogCollapsed,
     demoMode,
     demoScenario,
+    demoDurationSeconds,
     demoMediaHistory,
     demoRunCount,
     integrationSettings,
@@ -543,6 +544,7 @@ export default function App() {
     resetPipelineRun,
     setDemoMode,
     setDemoScenario,
+    setDemoDurationSeconds,
     setDemoMediaHistory,
     incrementDemoRunCount,
     setLastDemoTheme,
@@ -655,11 +657,13 @@ export default function App() {
       customPrompt,
       includeArchive: true,
     });
-    const speedMultiplier = demoScenario === "slow-success" ? 1 : 0.55;
+    const nominalDuration = Math.max(timeline.at(-1)?.delay || 1, 1);
+    const targetDurationMs = Math.max(8000, Math.min(180000, Number(demoDurationSeconds || 12) * 1000));
+    const speedMultiplier = targetDurationMs / nominalDuration;
     let previousDelay = 0;
 
     for (const entry of timeline) {
-      const delta = Math.max(120, Math.round((entry.delay - previousDelay) * speedMultiplier));
+      const delta = Math.max(140, Math.round((entry.delay - previousDelay) * speedMultiplier));
       previousDelay = entry.delay;
       await sleep(delta);
 
@@ -1007,9 +1011,10 @@ export default function App() {
     });
     setDemoMode(Boolean(nextSettings.demoMode));
     setDemoScenario(nextSettings.demoScenario || "fast-success");
+    setDemoDurationSeconds(nextSettings.demoDurationSeconds || 12);
     appendLog(
       "info",
-      `Impostazioni aggiornate. Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl}`,
+      `Impostazioni aggiornate. Timeout=${nextSettings.requestTimeoutMs}ms Webhook=${nextSettings.webhookUrl} Demo=${nextSettings.demoDurationSeconds || 12}s`,
     );
   };
 
@@ -1154,6 +1159,7 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         demoMode={demoMode}
         demoScenario={demoScenario}
+        demoDurationSeconds={demoDurationSeconds}
         integrationSettings={resolvedIntegrationSettings}
         onSave={handleSaveSettings}
         onTestConnection={handleTestConnection}

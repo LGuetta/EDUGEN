@@ -3,6 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function ImageLightbox({ open, scene, onClose }) {
   const [imageIndex, setImageIndex] = useState(0);
+  const imageSources = useMemo(() => {
+    if (!scene) return [];
+    return scene.imageSources?.length
+      ? scene.imageSources
+      : [scene.imageUrl, scene.fallbackImageUrl].filter(Boolean);
+  }, [scene?.fallbackImageUrl, scene?.imageSources, scene?.imageUrl]);
+
+  const imageSourceKey = imageSources.join("|");
 
   useEffect(() => {
     if (!open) return undefined;
@@ -21,17 +29,9 @@ export default function ImageLightbox({ open, scene, onClose }) {
     if (open) {
       setImageIndex(0);
     }
-  }, [open, scene?.id]);
+  }, [open, scene?.id, imageSourceKey]);
 
   if (!open || !scene) return null;
-
-  const imageSources = useMemo(
-    () =>
-      scene.imageSources?.length
-        ? scene.imageSources
-        : [scene.imageUrl, scene.fallbackImageUrl].filter(Boolean),
-    [scene.fallbackImageUrl, scene.imageSources, scene.imageUrl],
-  );
 
   const imageUrl = imageSources[imageIndex] || scene.fallbackImageUrl || scene.imageUrl || null;
 

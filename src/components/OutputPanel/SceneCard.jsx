@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const cardEntrance = {
   hidden: { opacity: 0, y: 20 },
@@ -12,6 +12,17 @@ const cardEntrance = {
 
 export default function SceneCard({ scene, index, onClick, active }) {
   const [imageIndex, setImageIndex] = useState(0);
+  const sourceKey = useMemo(() => {
+    const sources = scene.imageSources?.length
+      ? scene.imageSources
+      : [scene.imageUrl, scene.fallbackImageUrl].filter(Boolean);
+    return sources.join("|");
+  }, [scene.fallbackImageUrl, scene.imageSources, scene.imageUrl]);
+
+  useEffect(() => {
+    setImageIndex(0);
+  }, [sourceKey]);
+
   const resolvedImage = useMemo(() => {
     const sources = scene.imageSources?.length
       ? scene.imageSources

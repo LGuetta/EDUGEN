@@ -103,6 +103,7 @@ const DEMO_THEMES = {
 const DEFAULT_THEME = "grain-cycle";
 const IMAGE_VARIANT_COUNT = 4;
 const AUDIO_SET_COUNT = 5;
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"];
 
 function getStylePreset(styleKey) {
   return STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
@@ -193,12 +194,19 @@ function buildDemoImagePath(styleKey, sceneNumber, variantIndex) {
 
 function buildDemoImageSources(styleKey, sceneNumber, variantIndex) {
   const sceneSlug = `scene_${String(sceneNumber).padStart(2, "0")}`;
-  const variantBase = `variant_${String(variantIndex).padStart(2, "0")}`;
-  return [
-    `/assets/${styleKey}/${sceneSlug}/${variantBase}.png`,
-    `/assets/${styleKey}/${sceneSlug}/${variantBase}.jpg`,
-    `/assets/${styleKey}/${sceneSlug}/${variantBase}.jpeg`,
+  const orderedVariants = [
+    variantIndex,
+    ...Array.from({ length: IMAGE_VARIANT_COUNT }, (_, index) => index + 1).filter(
+      (candidate) => candidate !== variantIndex,
+    ),
   ];
+
+  return orderedVariants.flatMap((candidate) => {
+    const variantBase = `variant_${String(candidate).padStart(2, "0")}`;
+    return IMAGE_EXTENSIONS.map(
+      (extension) => `/assets/${styleKey}/${sceneSlug}/${variantBase}.${extension}`,
+    );
+  });
 }
 
 function buildDemoAudioPath(styleKey, audioSetIndex, sceneNumber) {
@@ -433,11 +441,20 @@ export function buildDemoTimeline({
 
   pushStep(950, {
     type: "info",
-    message: "Interpretazione struttura e segmentazione del documento...",
+    message: "Interpretazione struttura: indice, sezioni e ricorrenze lessicali in analisi...",
     currentStep: "Parse request",
     progress: 14,
     stepStates: { input: "complete", parsing: "active" },
     tokens: 2100,
+  });
+
+  pushStep(820, {
+    type: "info",
+    message: "Segmentazione tematica completata: nuclei narrativi prioritari identificati.",
+    currentStep: "Parse request",
+    progress: 18,
+    stepStates: { input: "complete", parsing: "active" },
+    tokens: 2760,
   });
 
   if (focusEnabled) {
@@ -453,17 +470,26 @@ export function buildDemoTimeline({
 
   pushStep(1350, {
     type: "info",
-    message: `Analisi LLM in corso su focus "${themeLabel.toLowerCase()}"...`,
+    message: `Analisi LLM in corso: correlazione tra contenuto sorgente e focus "${themeLabel.toLowerCase()}".`,
     currentStep: "LLM analysis",
     progress: 32,
     stepStates: { parsing: "complete", llm: "active" },
     tokens: 5820,
   });
 
+  pushStep(900, {
+    type: "info",
+    message: "Struttura narrativa definita: sequenza scene, ritmo e priorita concettuali allineati.",
+    currentStep: "LLM analysis",
+    progress: 36,
+    stepStates: { parsing: "complete", llm: "active" },
+    tokens: 6640,
+  });
+
   if (includeArchive) {
     pushStep(1150, {
       type: "success",
-      message: "Archivio Vivo: 3 riferimenti contestuali agganciati",
+      message: "Archivio Vivo: 3 riferimenti contestuali agganciati e pesati sulla linea narrativa.",
       currentStep: "Archivio Vivo",
       progress: 42,
       stepStates: { llm: "complete", archive: "active" },
@@ -473,7 +499,7 @@ export function buildDemoTimeline({
 
   pushStep(950, {
     type: "info",
-    message: `Style prompt ottimizzato per ${styleLabel}`,
+    message: `Style prompt ottimizzato per ${styleLabel}: tono, palette e gerarchia visuale definiti.`,
     currentStep: "Style Prompt",
     progress: 50,
     stepStates: { archive: includeArchive ? "complete" : "idle", style: "active" },
@@ -482,7 +508,7 @@ export function buildDemoTimeline({
 
   pushStep(850, {
     type: "info",
-    message: "Selezione LoRA e ControlNet in corso...",
+    message: "Selezione LoRA e ControlNet: vincoli compositivi e coerenza visiva in definizione.",
     currentStep: "LoRA + ControlNet",
     progress: 58,
     stepStates: { style: "complete", lora: "active", controlnet: "active" },
@@ -493,7 +519,7 @@ export function buildDemoTimeline({
     const sceneNumber = index + 1;
     pushStep(780, {
       type: "info",
-      message: `Set immagini aggiornato: scena ${sceneNumber}/${sceneCount}`,
+      message: `Scene ${sceneNumber}/${sceneCount}: composizione visiva, soggetto e variante media consolidati.`,
       currentStep: "Image Gen",
       progress: 62 + Math.round(((sceneNumber - 1) / sceneCount) * 14),
       stepStates: {
@@ -508,7 +534,7 @@ export function buildDemoTimeline({
 
   pushStep(1120, {
     type: "success",
-    message: "Tracce audio selezionate",
+    message: "Tracce audio selezionate: pacing, enfasi e continuita timbrica verificati.",
     currentStep: "Voice Synth",
     progress: 80,
     stepStates: { image: "complete", voice: "active" },
@@ -518,7 +544,7 @@ export function buildDemoTimeline({
 
   pushStep(920, {
     type: "info",
-    message: "Video output in preparazione (WIP placeholder)",
+    message: "Video output in preparazione (WIP placeholder): timeline di composizione riservata alla presentazione.",
     currentStep: "Video Compose",
     progress: 90,
     stepStates: { voice: "complete", video: "active" },
@@ -528,7 +554,7 @@ export function buildDemoTimeline({
 
   pushStep(1100, {
     type: "success",
-    message: "Pipeline completata",
+    message: "Pipeline completata: storyboard, media e output finale sincronizzati.",
     currentStep: "Aggregate Output",
     progress: 100,
     stepStates: { video: "complete", output: "complete" },

@@ -28,10 +28,6 @@ export default function Storyboard({
   const selectedScene = scenes.find((scene) => scene.id === selectedSceneId) || null;
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
 
-  useEffect(() => {
-    setPreviewImageIndex(0);
-  }, [selectedSceneId]);
-
   const headline = useMemo(() => {
     if (isLoading) return "Generazione scene in corso";
     if (!scenes.length) return "In attesa di output";
@@ -43,6 +39,12 @@ export default function Storyboard({
       ? selectedScene.imageSources
       : [selectedScene.imageUrl, selectedScene.fallbackImageUrl].filter(Boolean)
     : [];
+
+  const previewSourceKey = previewSources.join("|");
+
+  useEffect(() => {
+    setPreviewImageIndex(0);
+  }, [selectedSceneId, previewSourceKey]);
 
   const resolvedPreviewImage =
     previewSources[previewImageIndex] ||

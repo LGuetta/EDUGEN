@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = {
   requestTimeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
   demoMode: false,
   demoScenario: "fast-success",
+  demoDurationSeconds: 12,
 };
 
 const DEMO_SCENARIOS = [
@@ -50,6 +51,15 @@ function validateFormState(formState) {
     errors.requestTimeoutMs = "Timeout minimo consigliato: 5000 ms.";
   }
 
+  const demoDurationSeconds = Number(formState.demoDurationSeconds);
+  if (!Number.isFinite(demoDurationSeconds)) {
+    errors.demoDurationSeconds = "Durata demo non valida.";
+  } else if (demoDurationSeconds < 8) {
+    errors.demoDurationSeconds = "Durata minima consigliata: 8 secondi.";
+  } else if (demoDurationSeconds > 180) {
+    errors.demoDurationSeconds = "Durata massima consigliata: 180 secondi.";
+  }
+
   return errors;
 }
 
@@ -58,6 +68,7 @@ export default function SettingsModal({
   onClose,
   demoMode,
   demoScenario,
+  demoDurationSeconds = 12,
   integrationSettings,
   onSave,
   onTestConnection,
@@ -67,6 +78,7 @@ export default function SettingsModal({
     requestTimeoutMs: integrationSettings.requestTimeoutMs,
     demoMode,
     demoScenario,
+    demoDurationSeconds,
   });
   const [errors, setErrors] = useState({});
   const [connectionState, setConnectionState] = useState("idle");
@@ -79,6 +91,7 @@ export default function SettingsModal({
       requestTimeoutMs: integrationSettings.requestTimeoutMs,
       demoMode,
       demoScenario,
+      demoDurationSeconds,
     });
     setErrors({});
     setConnectionState("idle");
@@ -89,6 +102,7 @@ export default function SettingsModal({
     integrationSettings.requestTimeoutMs,
     demoMode,
     demoScenario,
+    demoDurationSeconds,
   ]);
 
   useEffect(() => {
@@ -132,6 +146,7 @@ export default function SettingsModal({
       requestTimeoutMs: Number(formState.requestTimeoutMs),
       demoMode: Boolean(formState.demoMode),
       demoScenario: formState.demoScenario,
+      demoDurationSeconds: Number(formState.demoDurationSeconds),
     });
     onClose();
   };
@@ -240,25 +255,51 @@ export default function SettingsModal({
           </label>
 
           {formState.demoMode ? (
-            <label className="block">
-              <span className="mb-1 block text-xs text-textSecondary">Demo Scenario</span>
-              <select
-                value={formState.demoScenario}
-                onChange={(event) => updateField("demoScenario", event.target.value)}
-                className="settings-input w-full rounded-md border border-borderPrimary px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary"
-                style={inputTextStyle}
-              >
-                {DEMO_SCENARIOS.map((scenario) => (
-                  <option
-                    key={scenario.id}
-                    value={scenario.id}
-                    style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)" }}
-                  >
-                    {scenario.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <>
+              <label className="block">
+                <span className="mb-1 block text-xs text-textSecondary">Demo Scenario</span>
+                <select
+                  value={formState.demoScenario}
+                  onChange={(event) => updateField("demoScenario", event.target.value)}
+                  className="settings-input w-full rounded-md border border-borderPrimary px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary"
+                  style={inputTextStyle}
+                >
+                  {DEMO_SCENARIOS.map((scenario) => (
+                    <option
+                      key={scenario.id}
+                      value={scenario.id}
+                      style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)" }}
+                    >
+                      {scenario.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-textSecondary">Durata Demo (secondi)</span>
+                <input
+                  type="number"
+                  min={8}
+                  max={180}
+                  step={1}
+                  value={formState.demoDurationSeconds}
+                  onChange={(event) => updateField("demoDurationSeconds", event.target.value)}
+                  className={`settings-input w-full rounded-md border px-3 py-2 text-sm text-textPrimary outline-none focus:border-accentPrimary ${
+                    errors.demoDurationSeconds ? "border-red-400/80" : "border-borderPrimary"
+                  }`}
+                  style={inputTextStyle}
+                />
+                {errors.demoDurationSeconds ? (
+                  <span className="mt-1 block text-[11px] text-red-300">
+                    {errors.demoDurationSeconds}
+                  </span>
+                ) : (
+                  <span className="mt-1 block text-[11px] text-textMuted">
+                    Imposta la durata percepita della pipeline demo. Valori alti simulano elaborazioni piu lente.
+                  </span>
+                )}
+              </label>
+            </>
           ) : null}
 
           <div className="rounded-md border border-borderPrimary bg-bgPrimary/35 px-3 py-2">

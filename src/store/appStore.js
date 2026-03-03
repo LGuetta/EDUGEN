@@ -45,6 +45,8 @@ const defaultIntegrationSettings = {
   requestTimeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
 };
 
+const DEFAULT_DEMO_DURATION_SECONDS = 12;
+
 export const useAppStore = create((set) => ({
   pdf: {
     file: null,
@@ -71,6 +73,7 @@ export const useAppStore = create((set) => ({
   isLogCollapsed: false,
   demoMode: false,
   demoScenario: "fast-success",
+  demoDurationSeconds: DEFAULT_DEMO_DURATION_SECONDS,
   customPrompt: "",
   archiveInsights: [],
   demoMediaHistory: {},
@@ -200,6 +203,13 @@ export const useAppStore = create((set) => ({
     })),
   setDemoMode: (demoMode) => set({ demoMode }),
   setDemoScenario: (demoScenario) => set({ demoScenario }),
+  setDemoDurationSeconds: (demoDurationSeconds) =>
+    set({
+      demoDurationSeconds: Math.max(
+        8,
+        Math.min(180, Number.isFinite(Number(demoDurationSeconds)) ? Number(demoDurationSeconds) : DEFAULT_DEMO_DURATION_SECONDS),
+      ),
+    }),
   setIntegrationSettings: (integrationUpdate) =>
     set((state) => ({
       integrationSettings: {
