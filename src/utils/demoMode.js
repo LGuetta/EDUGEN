@@ -111,11 +111,6 @@ function getStylePreset(styleKey) {
   return STYLE_PRESETS[styleKey] || FALLBACK_STYLE;
 }
 
-function getOrderedStyleKeys(styleKey) {
-  const styleKeys = Object.keys(STYLE_PRESETS);
-  return [styleKey, ...styleKeys.filter((candidate) => candidate !== styleKey)];
-}
-
 function createSceneDataUrl(sceneNumber, title, colors, variantIndex = 1) {
   const [a, b, c] = colors;
   const accent = [0.1, 0.18, 0.26, 0.34][Math.max(0, Math.min(variantIndex - 1, 3))];
@@ -207,34 +202,28 @@ function buildDemoImageSources(styleKey, sceneNumber, variantIndex) {
       (candidate) => candidate !== variantIndex,
     ),
   ];
-  const orderedStyles = getOrderedStyleKeys(styleKey);
 
-  return orderedVariants.flatMap((candidate) =>
-    orderedStyles.flatMap((resolvedStyleKey) => {
-      const variantBase = `variant_${String(candidate).padStart(2, "0")}`;
-      return IMAGE_EXTENSIONS.map(
-        (extension) => `/assets/${resolvedStyleKey}/${sceneSlug}/${variantBase}.${extension}`,
-      );
-    }),
-  );
+  return orderedVariants.flatMap((candidate) => {
+    const variantBase = `variant_${String(candidate).padStart(2, "0")}`;
+    return IMAGE_EXTENSIONS.map(
+      (extension) => `/assets/${styleKey}/${sceneSlug}/${variantBase}.${extension}`,
+    );
+  });
 }
 
 function buildDemoAudioSources(styleKey, audioSetIndex, sceneNumber) {
-  const orderedStyles = getOrderedStyleKeys(styleKey);
   const orderedSets = [
     audioSetIndex,
     ...AUDIO_SET_CANDIDATES.filter((candidate) => candidate !== audioSetIndex),
   ];
   const trackBase = `narration_${String(sceneNumber).padStart(2, "0")}`;
 
-  return orderedSets.flatMap((setId) =>
-    orderedStyles.flatMap((resolvedStyleKey) => {
-      const setSlug = `audio_set_${String(setId).padStart(2, "0")}`;
-      return AUDIO_EXTENSIONS.map(
-        (extension) => `/assets/${resolvedStyleKey}/${setSlug}/${trackBase}.${extension}`,
-      );
-    }),
-  );
+  return orderedSets.flatMap((setId) => {
+    const setSlug = `audio_set_${String(setId).padStart(2, "0")}`;
+    return AUDIO_EXTENSIONS.map(
+      (extension) => `/assets/${styleKey}/${setSlug}/${trackBase}.${extension}`,
+    );
+  });
 }
 
 export function getDemoVideoUrl(styleKey) {
