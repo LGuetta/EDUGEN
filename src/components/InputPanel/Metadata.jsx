@@ -25,15 +25,15 @@ export default function Metadata({ pdf, analysis, archiveInsights = [] }) {
         <div className="rounded-md border border-borderPrimary bg-bgPrimary/45 px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <span className="text-textSecondary">Archivio Vivo</span>
-            <span className="rounded-full border border-emerald-400/35 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-              Connesso
+            <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+              In Test
             </span>
           </div>
           <p className="mt-1 text-[11px] text-textMuted">
-            Supporto documentale e suggerimenti per la generazione
+            Modulo in fase di sviluppo — non attivo in questa sessione demo
           </p>
-          <p className="mt-2 text-[11px] font-medium text-accentInfo">
-            + riferimenti contestuali
+          <p className="mt-2 text-[11px] font-medium text-amber-400/70">
+            ⚠ riferimenti contestuali non disponibili
           </p>
           {archiveInsights.length ? (
             <div className="mt-2 space-y-1">
