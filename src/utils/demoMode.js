@@ -384,7 +384,7 @@ export function createDemoPackage({
     archiveInsights: createArchiveInsights(themeKey),
     scenes,
     audioSetKey: `audio_set_${String(audioSet).padStart(2, "0")}`,
-    videoUrl: getDemoVideoUrl(styleKey),
+    videoUrl: null,
     videoPosterUrl: createVideoPosterUrl(styleKey),
     updatedMediaHistory: nextMediaHistory,
     runLabel: `run_${demoRunCount + 1}`,
@@ -506,8 +506,8 @@ export function buildDemoTimeline({
   });
 
   pushStep(920, {
-    type: "success",
-    message: "Composizione video pronta",
+    type: "info",
+    message: "Video output in preparazione (WIP placeholder)",
     currentStep: "Video Compose",
     progress: 90,
     stepStates: { voice: "complete", video: "active" },
