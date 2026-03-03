@@ -141,31 +141,46 @@ export function createDemoPackage({ styleKey, customPrompt, mediaHistory, demoRu
   };
 }
 
-export function buildDemoTimeline({ durationSeconds, includeArchive = true }) {
-  const totalMs = Math.max(8000, Math.min(180000, Math.round(Number(durationSeconds || 12) * 1000)));
-  const steps = [
-    { key: "input", label: "PDF caricato" },
-    { key: "parsing", label: "Analisi struttura documento" },
-    { key: "llm", label: "Segmentazione tematica" },
-    ...(includeArchive ? [{ key: "archivio", label: "Archivio Vivo: 3 riferimenti contestuali" }] : []),
-    { key: "style", label: "Definizione impianto narrativo" },
-    { key: "lora", label: "Selezione varianti visive" },
-    { key: "controlnet", label: "Consolidamento composizione visiva" },
-    { key: "image", label: "Set immagini aggiornato" },
-    { key: "voice", label: "Tracce audio selezionate" },
-    { key: "video", label: "Video output in preparazione (WIP placeholder)" },
-    { key: "output", label: "Pipeline completata" },
-  ];
+// Nominal duration used internally. App.jsx reads the last entry's `delay` and scales
+// all deltas proportionally to match the user-configured demo duration (demoDurationSeconds).
+const NOMINAL_MS = 12000;
 
-  const slice = totalMs / steps.length;
+const TIMELINE_STEPS = [
+  { stepId: "input", currentStep: "PDF Input", type: "info", message: "PDF caricato. Avvio pipeline EDUGEN." },
+  { stepId: "parsing", currentStep: "Parse request", type: "info", message: "Analisi struttura documento in corso..." },
+  { stepId: "llm", currentStep: "Analisi LLM", type: "info", message: "Segmentazione tematica LLM completata.", tokens: 1847 },
+  { stepId: "archive", currentStep: "Archivio Vivo", type: "info", message: "Archivio Vivo: 3 riferimenti contestuali trovati.", archiveOnly: true },
+  { stepId: "style", currentStep: "Style prompt", type: "info", message: "Definizione impianto narrativo completata." },
+  { stepId: "lora", currentStep: "LoRA select", type: "info", message: "Selezione varianti visive LoRA completata." },
+  { stepId: "controlnet", currentStep: "ControlNet", type: "info", message: "Consolidamento composizione visiva ok." },
+  { stepId: "image", currentStep: "Generazione immagini", type: "success", message: "Set immagini generato. 5 scene pronte.", scenesGenerated: 5 },
+  { stepId: "voice", currentStep: "Voice synth", type: "success", message: "Tracce audio selezionate e validate." },
+  { stepId: "video", currentStep: "Video compose", type: "info", message: "Video output in preparazione." },
+  { stepId: "output", currentStep: "Aggregate output", type: "success", message: "Pipeline completata. Output disponibile.", isFinal: true },
+];
+
+export function buildDemoTimeline({ includeArchive = true } = {}) {
+  const steps = TIMELINE_STEPS.filter((step) => includeArchive || !step.archiveOnly);
+  const slice = NOMINAL_MS / steps.length;
   let elapsed = 0;
 
   return steps.map((step, index) => {
     elapsed += Math.round(slice + (index % 2 === 0 ? slice * 0.08 : -slice * 0.05));
+    const isLast = index === steps.length - 1;
+
+    // Build stepStates: previous steps complete, current active (or complete if last)
+    const stepStates = {};
+    for (let j = 0; j < index; j++) {
+      stepStates[steps[j].stepId] = "complete";
+    }
+    stepStates[step.stepId] = isLast ? "complete" : "active";
+
     return {
       ...step,
-      atMs: Math.min(elapsed, totalMs),
-      progress: Math.min(100, Math.round(((index + 1) / steps.length) * 100)),
+      delay: Math.min(elapsed, NOMINAL_MS),
+      stepStates,
+      progress: Math.min(96, Math.round(((index + 1) / steps.length) * 100)),
+      isFinal: Boolean(step.isFinal),
     };
   });
 }
