@@ -1,7 +1,9 @@
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function ImageLightbox({ open, scene, onClose }) {
+  const [imageIndex, setImageIndex] = useState(0);
+
   useEffect(() => {
     if (!open) return undefined;
 
@@ -15,9 +17,23 @@ export default function ImageLightbox({ open, scene, onClose }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, open]);
 
+  useEffect(() => {
+    if (open) {
+      setImageIndex(0);
+    }
+  }, [open, scene?.id]);
+
   if (!open || !scene) return null;
 
-  const imageUrl = scene.imageUrl || scene.fallbackImageUrl || scene.imageSources?.[0] || null;
+  const imageSources = useMemo(
+    () =>
+      scene.imageSources?.length
+        ? scene.imageSources
+        : [scene.imageUrl, scene.fallbackImageUrl].filter(Boolean),
+    [scene.fallbackImageUrl, scene.imageSources, scene.imageUrl],
+  );
+
+  const imageUrl = imageSources[imageIndex] || scene.fallbackImageUrl || scene.imageUrl || null;
 
   return (
     <div
@@ -42,6 +58,11 @@ export default function ImageLightbox({ open, scene, onClose }) {
               src={imageUrl}
               alt={scene.title}
               className="max-h-[75vh] w-full object-contain"
+              onError={() => {
+                if (imageIndex < imageSources.length - 1) {
+                  setImageIndex((current) => current + 1);
+                }
+              }}
             />
           ) : (
             <div className="grid h-[420px] place-items-center text-sm text-textMuted">

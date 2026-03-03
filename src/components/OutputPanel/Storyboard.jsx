@@ -1,5 +1,5 @@
 import { Expand } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SceneCard from "./SceneCard";
 
 function SkeletonCard({ index }) {
@@ -26,13 +26,29 @@ export default function Storyboard({
   archiveInsights = [],
 }) {
   const selectedScene = scenes.find((scene) => scene.id === selectedSceneId) || null;
-  const [failedPreview, setFailedPreview] = useState(false);
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
+
+  useEffect(() => {
+    setPreviewImageIndex(0);
+  }, [selectedSceneId]);
 
   const headline = useMemo(() => {
     if (isLoading) return "Generazione scene in corso";
     if (!scenes.length) return "In attesa di output";
     return `${scenes.length} scenes generated`;
   }, [isLoading, scenes.length]);
+
+  const previewSources = selectedScene
+    ? selectedScene.imageSources?.length
+      ? selectedScene.imageSources
+      : [selectedScene.imageUrl, selectedScene.fallbackImageUrl].filter(Boolean)
+    : [];
+
+  const resolvedPreviewImage =
+    previewSources[previewImageIndex] ||
+    selectedScene?.fallbackImageUrl ||
+    selectedScene?.imageUrl ||
+    null;
 
   return (
     <section className="panel p-3">
@@ -64,10 +80,14 @@ export default function Storyboard({
             className="group relative mb-3 block w-full overflow-hidden rounded-lg border border-borderPrimary"
           >
             <img
-              src={failedPreview ? selectedScene.fallbackImageUrl || selectedScene.imageUrl : selectedScene.imageUrl}
+              src={resolvedPreviewImage}
               alt={selectedScene.title}
               className="h-36 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-              onError={() => setFailedPreview(true)}
+              onError={() => {
+                if (previewImageIndex < previewSources.length - 1) {
+                  setPreviewImageIndex((current) => current + 1);
+                }
+              }}
             />
             <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-white/20 bg-black/55 px-2 py-1 text-[10px] font-semibold tracking-[0.08em] text-white">
               <Expand size={10} />

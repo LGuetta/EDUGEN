@@ -11,12 +11,22 @@ const cardEntrance = {
 };
 
 export default function SceneCard({ scene, index, onClick, active }) {
-  const [failedPrimary, setFailedPrimary] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
   const resolvedImage = useMemo(() => {
-    const [primary, fallback] = scene.imageSources || [scene.imageUrl, scene.fallbackImageUrl];
-    if (failedPrimary && fallback) return fallback;
-    return primary || fallback || scene.imageUrl;
-  }, [failedPrimary, scene.fallbackImageUrl, scene.imageSources, scene.imageUrl]);
+    const sources = scene.imageSources?.length
+      ? scene.imageSources
+      : [scene.imageUrl, scene.fallbackImageUrl].filter(Boolean);
+    return sources[imageIndex] || scene.fallbackImageUrl || scene.imageUrl;
+  }, [imageIndex, scene.fallbackImageUrl, scene.imageSources, scene.imageUrl]);
+
+  const handleImageError = () => {
+    const sources = scene.imageSources?.length
+      ? scene.imageSources
+      : [scene.imageUrl, scene.fallbackImageUrl].filter(Boolean);
+    if (imageIndex < sources.length - 1) {
+      setImageIndex((current) => current + 1);
+    }
+  };
 
   return (
     <motion.button
@@ -36,7 +46,7 @@ export default function SceneCard({ scene, index, onClick, active }) {
         src={resolvedImage}
         alt={scene.title}
         className="h-24 w-full object-cover"
-        onError={() => setFailedPrimary(true)}
+        onError={handleImageError}
       />
       <div className="space-y-1 p-2">
         <p className="text-[11px] text-textMuted">Scene {scene.number}</p>

@@ -246,10 +246,20 @@ function dedupeWarnings(warnings) {
   });
 }
 
+function buildStaticFallbackImageSources(style, sceneNumber) {
+  const sceneSlug = `scene_${String(sceneNumber).padStart(2, "0")}`;
+  return [
+    `/assets/${style}/${sceneSlug}.png`,
+    `/assets/${style}/${sceneSlug}.jpg`,
+    `/assets/${style}/${sceneSlug}.jpeg`,
+  ];
+}
+
 function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
   const fallback = Array.from({ length: rawScenes.length || 6 }, (_, index) => ({
     number: index + 1,
-    imageUrl: `/assets/${style}/scene_${String(index + 1).padStart(2, "0")}.png`,
+    imageUrl: buildStaticFallbackImageSources(style, index + 1)[0],
+    imageSources: buildStaticFallbackImageSources(style, index + 1),
   }));
   const warnings = [];
   let playableAudioCount = 0;
@@ -266,7 +276,7 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
     const resolvedImagePath = hasImage ? scene.imagePath : fallbackScene.imageUrl;
     const imageSources = Array.isArray(scene.imageSources) && scene.imageSources.length
       ? scene.imageSources
-      : [resolvedImagePath].filter(Boolean);
+      : [resolvedImagePath, ...(fallbackScene.imageSources || []).filter((source) => source !== resolvedImagePath)].filter(Boolean);
     const audioSources = Array.isArray(scene.audioSources) && scene.audioSources.length
       ? scene.audioSources
       : [resolvedAudioPath].filter(Boolean);

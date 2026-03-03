@@ -191,6 +191,16 @@ function buildDemoImagePath(styleKey, sceneNumber, variantIndex) {
   return `/assets/${styleKey}/${sceneSlug}/${variantSlug}`;
 }
 
+function buildDemoImageSources(styleKey, sceneNumber, variantIndex) {
+  const sceneSlug = `scene_${String(sceneNumber).padStart(2, "0")}`;
+  const variantBase = `variant_${String(variantIndex).padStart(2, "0")}`;
+  return [
+    `/assets/${styleKey}/${sceneSlug}/${variantBase}.png`,
+    `/assets/${styleKey}/${sceneSlug}/${variantBase}.jpg`,
+    `/assets/${styleKey}/${sceneSlug}/${variantBase}.jpeg`,
+  ];
+}
+
 function buildDemoAudioPath(styleKey, audioSetIndex, sceneNumber) {
   const setSlug = `audio_set_${String(audioSetIndex).padStart(2, "0")}`;
   const trackSlug = `narration_${String(sceneNumber).padStart(2, "0")}.mp3`;
@@ -356,7 +366,8 @@ export function createDemoPackage({
       Math.max(8, Math.round(scene.narrationScript.length / 18)),
       audioSet,
     );
-    const imagePath = buildDemoImagePath(styleKey, scene.number, variantIndex);
+    const imageSources = buildDemoImageSources(styleKey, scene.number, variantIndex);
+    const imagePath = imageSources[0];
     const preferredAudioPath = buildDemoAudioPath(styleKey, audioSet, scene.number);
 
     return {
@@ -366,7 +377,7 @@ export function createDemoPackage({
       narrationScript: scene.narrationScript,
       duration: Math.max(8, Number((scene.narrationScript.length / 18).toFixed(1))),
       imageUrl: imagePath,
-      imageSources: [imagePath, fallbackImageUrl],
+      imageSources: [...imageSources, fallbackImageUrl],
       fallbackImageUrl,
       imageVariantKey: `variant_${String(variantIndex).padStart(2, "0")}`,
       audioPath: fallbackAudioUrl,
