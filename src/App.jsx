@@ -600,6 +600,7 @@ export default function App() {
     setDemoDurationSeconds,
     setDemoMediaHistory,
     incrementDemoRunCount,
+    resetDemoRunCount,
     setLastDemoTheme,
     setIntegrationSettings,
     setLastRequestPayload,
@@ -619,6 +620,12 @@ export default function App() {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   const styleLabel = STYLE_LABELS[selectedStyle] || "Acquarello";
+
+  // Reset run count on style change so variant alternation restarts from variant_01
+  const handleStyleChange = (newStyle) => {
+    setSelectedStyle(newStyle);
+    resetDemoRunCount();
+  };
   const statusLabel = useMemo(() => titleCase(pipeline.status), [pipeline.status]);
   const resolvedIntegrationSettings = useMemo(
     () => ({
@@ -1222,8 +1229,8 @@ export default function App() {
       <div className="mx-auto h-[calc(100%-60px)] w-full max-w-[1920px] px-4 pb-3 pt-4">
         <div
           className={`grid h-full gap-3 ${isLogCollapsed
-              ? "grid-rows-[minmax(0,1fr)_40px_48px]"
-              : "grid-rows-[minmax(0,1fr)_180px_48px]"
+            ? "grid-rows-[minmax(0,1fr)_40px_48px]"
+            : "grid-rows-[minmax(0,1fr)_180px_48px]"
             }`}
         >
           <main className="grid min-h-0 grid-cols-[300px_1fr_340px] gap-4">
@@ -1234,7 +1241,7 @@ export default function App() {
               selectedVideoPreset={selectedVideoPreset}
               customPrompt={customPrompt}
               archiveInsights={archiveInsights}
-              onStyleChange={setSelectedStyle}
+              onStyleChange={handleStyleChange}
               onVideoPresetChange={setSelectedVideoPreset}
               onCustomPromptChange={setCustomPrompt}
               onFilePicked={handleFilePicked}

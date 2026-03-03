@@ -115,6 +115,7 @@ export const useAppStore = create((set) => ({
     set((state) => ({
       demoRunCount: state.demoRunCount + 1,
     })),
+  resetDemoRunCount: () => set({ demoRunCount: 0 }),
   setLastDemoTheme: (lastDemoTheme) => set({ lastDemoTheme }),
   setPipelineStatus: (status) =>
     set((state) => ({
