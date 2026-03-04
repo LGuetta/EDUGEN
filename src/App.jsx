@@ -1041,7 +1041,7 @@ export default function App() {
       let blob = null;
 
       try {
-        const response = await fetch("/demo/edugen-storia-demo.pdf");
+        const response = await fetch("/agricoltura_red.pdf");
         if (response.ok) {
           blob = await response.blob();
         }
@@ -1053,7 +1053,7 @@ export default function App() {
         blob = createBundledDemoPdfBlob();
       }
 
-      const demoFile = new File([blob], "edugen-storia-demo.pdf", {
+      const demoFile = new File([blob], "agricoltura_red.pdf", {
         type: "application/pdf",
         lastModified: Date.now(),
       });
