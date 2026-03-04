@@ -354,7 +354,7 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
         ),
       );
     }
-    if (!hasImage) {
+    if (!hasRealImage) {
       warnings.push(
         createFallbackWarning(
           sceneNumber,
