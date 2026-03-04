@@ -302,9 +302,9 @@ function dedupeWarnings(warnings) {
 function buildStaticFallbackImageSources(style, sceneNumber) {
   const sceneSlug = `scene_${String(sceneNumber).padStart(2, "0")}`;
   return [
-    `/assets/${style}/${sceneSlug}.png`,
-    `/assets/${style}/${sceneSlug}.jpg`,
-    `/assets/${style}/${sceneSlug}.jpeg`,
+    `/assets/${style}/${sceneSlug}/variant_01.png`,
+    `/assets/${style}/${sceneSlug}/variant_01.jpg`,
+    `/assets/${style}/${sceneSlug}/variant_02.png`,
   ];
 }
 
@@ -323,10 +323,12 @@ function normalizeBackendScenes(rawScenes, style, fallbackAudioUrl) {
     const hasTitle = typeof scene.title === "string" && scene.title.trim().length > 0;
     const hasNarration =
       typeof scene.narrationScript === "string" && scene.narrationScript.trim().length > 0;
-    const hasImage = typeof scene.imagePath === "string" && scene.imagePath.trim().length > 0;
+    const hasRealImage =
+      typeof scene.imagePath === "string" &&
+      (scene.imagePath.startsWith("http") || scene.imagePath.startsWith("blob"));
     const hasAudio = typeof scene.audioPath === "string" && scene.audioPath.trim().length > 0;
     const resolvedAudioPath = scene.audioPath || fallbackAudioUrl || null;
-    const resolvedImagePath = hasImage ? scene.imagePath : fallbackScene.imageUrl;
+    const resolvedImagePath = hasRealImage ? scene.imagePath : fallbackScene.imageUrl;
     const imageSources = Array.isArray(scene.imageSources) && scene.imageSources.length
       ? scene.imageSources
       : [resolvedImagePath, ...(fallbackScene.imageSources || []).filter((source) => source !== resolvedImagePath)].filter(Boolean);

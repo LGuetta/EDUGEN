@@ -8,8 +8,9 @@ export function buildN8nPayload({ pdfPath, pdfContent, styleModule, videoPreset 
     requestId: `req_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
     pdfContent: pdfContent || "",
     pdfPath,
-    styleModule,
+    styleModule,   // acquarello | fotorealistico | vettoriale
     videoPreset,
+    sceneCount: 5, // number of scenes to generate
     sentAt: new Date().toISOString(),
     uiSource: "edugen-ui",
   };
