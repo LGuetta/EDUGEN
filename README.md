@@ -285,7 +285,7 @@ Il topic viene scelto dal nome del PDF caricato (in alternativa dal Focus Prompt
 
 ### Immagini demo
 
-Per `grain-cycle` (per stile):
+Per `grain-cycle` (cartella per stile, niente sotto-cartella per stile interna):
 
 ```text
 public/assets/{style}/
@@ -299,21 +299,32 @@ public/assets/{style}/
   scene_05/...
 ```
 
-Per gli altri topic (per topic, indipendente dallo stile):
+Per gli altri topic (cartella per topic, con sotto-cartella per stile dentro la scena):
 
 ```text
 public/assets/{topic}/
   scene_01/
-    variant_01.png
-    variant_02.png
-    variant_03.png
-    variant_04.png
+    illustrazione/
+      variant_01.png
+      variant_02.png
+      variant_03.png
+      variant_04.png
+    photo/
+      variant_01.png
+      variant_02.png
+      variant_03.png
+      variant_04.png
   scene_02/...
   ...
   scene_05/...
 ```
 
 Dove `{topic}` e' uno tra `assicurazioni`, `geografia`, `onu`.
+
+Mapping stile -> sotto-cartella:
+
+- `acquarello`, `vettoriale` -> `illustrazione/`
+- `fotorealistico` -> `photo/`
 
 Regole:
 
@@ -360,21 +371,65 @@ Regole:
 - anche qui usa sempre due cifre: `01`-`05`
 - estensioni accettate: `.mp3` o `.MP3`
 
+### Video demo
+
+Per ogni topic e' previsto un singolo video sintetico:
+
+```text
+public/assets/{topic}/video_demo.mp4
+```
+
+Per `grain-cycle` resta la layout per stile gia' esistente:
+
+```text
+public/assets/{style}/video_demo.mp4
+```
+
+Se il file non esiste, la UI degrada in modo silenzioso (il pannello video resta vuoto).
+
 ### Mapping per asset consegnati dal cliente
 
-Le cartelle che il cliente fornisce (es. `assicurazioni/ASSICURAZIONI/01..05` + `AUDIO/`) vanno rinominate cosi':
+Il cliente consegna pacchetti con questa forma (esempio `onu`):
 
-| Origine cliente                                          | Destinazione nel repo                                  |
-| -------------------------------------------------------- | ------------------------------------------------------ |
-| `assicurazioni/ASSICURAZIONI/01/<file>.png`              | `public/assets/assicurazioni/scene_01/variant_01.png`  |
-| `assicurazioni/ASSICURAZIONI/01/<file2>.png`             | `public/assets/assicurazioni/scene_01/variant_02.png`  |
-| `assicurazioni/ASSICURAZIONI/02/...`                     | `public/assets/assicurazioni/scene_02/...`             |
-| `assicurazioni/ASSICURAZIONI/AUDIO/<scena1>.mp3`         | `public/assets/assicurazioni/audio_set_01/narration_01.mp3` |
-| `assicurazioni/ASSICURAZIONI/AUDIO/<scena2>.mp3`         | `public/assets/assicurazioni/audio_set_01/narration_02.mp3` |
+```text
+onu/
+  onu/
+    01/
+      ILLUSTRAZIONE/   <- una o piu' immagini illustrate
+      PHOTO/           <- una o piu' immagini fotografiche
+    02/  ...
+    03/  ...
+    04/  ...
+    05/  ...
+    AUDIO/             <- 5 narrazioni (una per scena)
+    photomovie_onu.mp4 <- video sintetico del topic
+    photomovie_onu_ita.txt
+```
 
-Stesso pattern per `geografia/` (cartella sorgente: `geografia_keynote/`) e `onu/`.
+Mapping nel repo (per topic):
 
-Per dare la sensazione di "rigenerazione" tra una run e l'altra puoi duplicare lo stesso set audio in `audio_set_02`, `audio_set_03`, ... (cosi' la rotazione esiste anche se in pratica suona uguale).
+| Origine cliente (esempio `onu`)                              | Destinazione nel repo                                                 |
+| ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `onu/onu/01/ILLUSTRAZIONE/<img1>`                            | `public/assets/onu/scene_01/illustrazione/variant_01.png`            |
+| `onu/onu/01/ILLUSTRAZIONE/<img2>` (se presente)              | `public/assets/onu/scene_01/illustrazione/variant_02.png`            |
+| `onu/onu/01/PHOTO/<img1>`                                    | `public/assets/onu/scene_01/photo/variant_01.png`                    |
+| `onu/onu/01/PHOTO/<img2>` (se presente)                      | `public/assets/onu/scene_01/photo/variant_02.png`                    |
+| `onu/onu/02/ILLUSTRAZIONE/...`                               | `public/assets/onu/scene_02/illustrazione/...`                       |
+| (idem per `03`, `04`, `05`)                                  |                                                                       |
+| `onu/onu/AUDIO/<scena1>.mp3`                                 | `public/assets/onu/audio_set_01/narration_01.mp3`                    |
+| `onu/onu/AUDIO/<scena2>.mp3`                                 | `public/assets/onu/audio_set_01/narration_02.mp3`                    |
+| (idem per `narration_03..05.mp3` nello stesso set)           |                                                                       |
+| `onu/onu/photomovie_onu.mp4`                                 | `public/assets/onu/video_demo.mp4`                                   |
+| `onu/onu/photomovie_onu_ita.txt`                             | (opzionale) `demo_assets/voice_scripts/markdown/onu_pack_01.md`      |
+
+Stesso pattern per `assicurazioni/` (sorgente: `assicurazioni/ASSICURAZIONI/...`) e `geografia/` (sorgente: `geografia_keynote/...`).
+
+#### Suggerimenti pratici
+
+- **Drag & drop diretto da Windows Explorer**: rinomina la cartella `ILLUSTRAZIONE` in `illustrazione` (minuscolo) e `PHOTO` in `photo`, poi sposta tutto dentro la `scene_XX` corrispondente del repo. I file dentro vanno rinominati `variant_01.png`, `variant_02.png`, ecc.
+- **AUDIO**: ogni file della cartella AUDIO va rinominato `narration_01.mp3` ... `narration_05.mp3` e messo dentro `audio_set_01/`.
+- **Rotazione audio nelle rigenerazioni**: per dare la sensazione di "regen" duplica la cartella `audio_set_01/` in `audio_set_02..05/`. La UI ruota su 5 set per evitare ripetizioni immediate.
+- **video_demo.mp4**: rinomina `photomovie_<topic>.mp4` -> `video_demo.mp4` e mettilo nella radice del topic. Il file `_ita.txt` non serve all'app, e' solo riferimento per il team voce.
 
 ### Video demo
 
