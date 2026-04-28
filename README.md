@@ -64,12 +64,25 @@ E il percorso locale di presentazione.
 
 Nello stato attuale del progetto, `Demo mode` coincide con una pipeline locale completa e controllata:
 
-- 6 scene coerenti
+- 5 scene coerenti
 - immagini locali con varianti
 - audio locale con set multipli
 - video demo locale
 - log plausibili
 - timeline artificiale credibile
+
+### Topic dinamici (pacchetti contenuti)
+
+Il pacchetto demo non e' piu' un singolo tema fisso: la UI risolve un **topic** in base al nome del PDF caricato (e in alternativa al Focus Prompt) e usa scene, titoli, narrazioni e cartelle asset specifiche per quel topic.
+
+Topic supportati (vedi `src/utils/demoMode.js`):
+
+- `grain-cycle` -> default, "Il ciclo del grano"
+- `assicurazioni` -> "Principi assicurativi"
+- `geografia` -> "Paesaggi e popolamento"
+- `onu` -> "Le Nazioni Unite"
+
+Aggiungere un topic = aggiungere una entry in `TOPICS` (con keyword di riconoscimento, scene, narrazioni) e creare le cartelle asset corrispondenti sotto `public/assets/{topic}/`.
 
 ### Differenza pratica
 
@@ -253,11 +266,26 @@ Se Voicebox genera un file locale, quel file deve essere esposto via URL HTTP pr
 
 ## Asset demo locali
 
-Gli asset demo devono stare dentro `public/assets/` e seguire naming rigoroso.
+Gli asset demo stanno dentro `public/assets/` e seguono naming rigoroso.
+
+In `Demo mode` esistono due tipologie di pacchetto asset, scelte automaticamente in base al PDF caricato:
+
+- **pacchetto per stile** (storico, solo `grain-cycle`): rendering diversi per ogni stile visivo.
+- **pacchetto per topic** (nuovi pack: `assicurazioni`, `geografia`, `onu`): rendering unico per topic, lo stile UI rimane selezionabile ma le immagini non cambiano.
+
+### Risoluzione del topic
+
+Il topic viene scelto dal nome del PDF caricato (in alternativa dal Focus Prompt). Le keyword sono in `src/utils/demoMode.js` -> `TOPICS[*].keywords`. Esempi:
+
+- `agricoltura_red.pdf` -> `grain-cycle` (default)
+- `assicurazioni_capitolo_03.pdf` -> `assicurazioni`
+- `geografia_keynote.pdf` -> `geografia`
+- `manuale_onu_2024.pdf` -> `onu`
+- nome non riconosciuto -> `grain-cycle`
 
 ### Immagini demo
 
-Per ogni stile:
+Per `grain-cycle` (per stile):
 
 ```text
 public/assets/{style}/
@@ -266,29 +294,38 @@ public/assets/{style}/
     variant_02.png
     variant_03.png
     variant_04.png
-  scene_02/
-    variant_01.png
-    variant_02.png
-    variant_03.png
-    variant_04.png
+  scene_02/...
   ...
-  scene_06/
+  scene_05/...
+```
+
+Per gli altri topic (per topic, indipendente dallo stile):
+
+```text
+public/assets/{topic}/
+  scene_01/
     variant_01.png
     variant_02.png
     variant_03.png
     variant_04.png
+  scene_02/...
+  ...
+  scene_05/...
 ```
+
+Dove `{topic}` e' uno tra `assicurazioni`, `geografia`, `onu`.
 
 Regole:
 
-- 6 scene per stile
-- 4 varianti per scena
-- usa sempre due cifre: `01`-`06`
+- 5 scene per pacchetto
+- fino a 4 varianti per scena (la rigenerazione alterna `variant_01` e `variant_02`; le altre sono usate solo se presenti)
+- usa sempre due cifre: `01`-`05`
 - usa sempre `variant_01`-`variant_04`
+- se mancano file, la UI prova in ordine `.png` -> `.jpg` -> `.jpeg` e poi le altre varianti
 
 ### Audio demo
 
-Per ogni stile:
+Per `grain-cycle` (per stile):
 
 ```text
 public/assets/{style}/
@@ -298,23 +335,46 @@ public/assets/{style}/
     narration_03.mp3
     narration_04.mp3
     narration_05.mp3
-    narration_06.mp3
   audio_set_02/
-    ...
-  audio_set_03/
-    ...
-  audio_set_04/
-    ...
+  ...
   audio_set_05/
+```
+
+Per gli altri topic (per topic):
+
+```text
+public/assets/{topic}/
+  audio_set_01/
+    narration_01.mp3
     ...
+    narration_05.mp3
+  ...
+  audio_set_05/
 ```
 
 Regole:
 
-- 5 set audio per stile
-- ogni set contiene 6 tracce
+- 5 set audio per pacchetto
+- ogni set contiene 5 tracce
 - tutte le scene di un run demo usano lo stesso `audio_set_*`
-- anche qui usa sempre due cifre: `01`-`06`
+- anche qui usa sempre due cifre: `01`-`05`
+- estensioni accettate: `.mp3` o `.MP3`
+
+### Mapping per asset consegnati dal cliente
+
+Le cartelle che il cliente fornisce (es. `assicurazioni/ASSICURAZIONI/01..05` + `AUDIO/`) vanno rinominate cosi':
+
+| Origine cliente                                          | Destinazione nel repo                                  |
+| -------------------------------------------------------- | ------------------------------------------------------ |
+| `assicurazioni/ASSICURAZIONI/01/<file>.png`              | `public/assets/assicurazioni/scene_01/variant_01.png`  |
+| `assicurazioni/ASSICURAZIONI/01/<file2>.png`             | `public/assets/assicurazioni/scene_01/variant_02.png`  |
+| `assicurazioni/ASSICURAZIONI/02/...`                     | `public/assets/assicurazioni/scene_02/...`             |
+| `assicurazioni/ASSICURAZIONI/AUDIO/<scena1>.mp3`         | `public/assets/assicurazioni/audio_set_01/narration_01.mp3` |
+| `assicurazioni/ASSICURAZIONI/AUDIO/<scena2>.mp3`         | `public/assets/assicurazioni/audio_set_01/narration_02.mp3` |
+
+Stesso pattern per `geografia/` (cartella sorgente: `geografia_keynote/`) e `onu/`.
+
+Per dare la sensazione di "rigenerazione" tra una run e l'altra puoi duplicare lo stesso set audio in `audio_set_02`, `audio_set_03`, ... (cosi' la rotazione esiste anche se in pratica suona uguale).
 
 ### Video demo
 
@@ -472,7 +532,7 @@ Questi file non sono asset runtime del browser: sono materiale operativo interno
 3. Inserisci opzionalmente un `Focus Prompt`
 4. Premi `Generate`
 5. Controlla:
-   - 6 scene
+   - 5 scene
    - immagini presenti
    - audio presenti
    - video demo presente

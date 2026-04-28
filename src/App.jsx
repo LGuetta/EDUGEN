@@ -895,11 +895,18 @@ export default function App() {
         const rawDemoPackage = createDemoPackage({
           styleKey: selectedStyle,
           customPrompt,
+          fileName: pdf.name,
           mediaHistory: demoMediaHistory,
           demoRunCount,
         });
         const demoPackage = await resolveDemoPackageMedia(rawDemoPackage);
         setArchiveInsights(demoPackage.archiveInsights);
+        setAnalysis({
+          ...analysis,
+          subject: demoPackage.documentAnalysis.subject,
+          language: demoPackage.documentAnalysis.language,
+          complexity: demoPackage.documentAnalysis.complexity,
+        });
         setDemoMediaHistory(demoPackage.updatedMediaHistory);
         setLastDemoTheme(demoPackage.themeKey);
         incrementDemoRunCount();

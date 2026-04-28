@@ -1,53 +1,251 @@
-const DEMO_SCENE_TITLES = [
-  "Semina",
-  "Germinazione",
-  "Levata",
-  "Spigatura",
-  "Maturazione",
+// ============================================================================
+// DEMO TOPIC REGISTRY
+// ----------------------------------------------------------------------------
+// Each topic is a self-contained pack used by Demo mode to render a credible
+// pipeline output without hitting any backend. The active topic is resolved
+// from the uploaded PDF filename (or the Focus Prompt) at generation time.
+//
+// To add a new topic:
+//  1. Add an entry in TOPICS below (id, label, scenes, keywords...)
+//  2. Drop the matching assets under `public/assets/<assetBase>/...` using the
+//     scene_XX / audio_set_XX naming convention documented in the README.
+// ============================================================================
+
+const GRAIN_CYCLE_SCENES = [
+  {
+    title: "Semina",
+    duration: 20,
+    narrationScript:
+      "Un seme. Piccolo, quasi invisibile. Deposto nella terra a due, tre centimetri di profondità, poi ricoperto di suolo.\n\nÈ ottobre. La seminatrice a file distribuisce 180-200 kg di seme per ettaro. L'operatore regola profondità e spaziatura tra le file.",
+  },
+  {
+    title: "Germinazione",
+    duration: 18,
+    narrationScript:
+      "Dentro il seme, l'embrione si risveglia. Si trasforma, lentamente, in una piccola pianta. La vita comincia al buio.\n\nTemperatura ottimale del suolo: 10-15°C. Umidità controllata. I primi germogli emergono in 7-10 giorni.",
+  },
+  {
+    title: "Levata",
+    duration: 18,
+    narrationScript:
+      "Il germoglio sale verso la luce. Cresce il fusto, si aprono foglie lunghe e strette. La pianta impara a stare in piedi.\n\nÈ gennaio. Il trattore distribuisce azoto: 80-120 kg per ettaro. La concimazione sostiene la crescita del fusto.",
+  },
+  {
+    title: "Spigatura",
+    duration: 20,
+    narrationScript:
+      "Fuoriesce la spiga. Su di essa nascono i fiori, poi i frutti: le cariossidi. Identiche al seme di partenza. Il cerchio si prepara a chiudersi.\n\nÈ maggio. Ogni spiga porta 35-50 cariossidi. Un ettaro coltivato conta fino a 600 spighe per metro quadro.",
+  },
+  {
+    title: "Maturazione",
+    duration: 19,
+    narrationScript:
+      "Le sostanze nutritive migrano dalle foglie alle cariossidi. La spiga si ingrossa, si fa pesante. La pianta ingiallisce: ha dato tutto.\n\nUmidità del chicco: scende al 13-14%. Il tecnico agrario monitora il campo per stabilire il momento ottimale del raccolto.",
+  },
 ];
 
-const DEMO_SCENE_SCRIPTS = [
-  "Un seme. Piccolo, quasi invisibile. Deposto nella terra a due, tre centimetri di profondità, poi ricoperto di suolo.\n\nÈ ottobre. La seminatrice a file distribuisce 180-200 kg di seme per ettaro. L'operatore regola profondità e spaziatura tra le file.",
-  "Dentro il seme, l'embrione si risveglia. Si trasforma, lentamente, in una piccola pianta. La vita comincia al buio.\n\nTemperatura ottimale del suolo: 10-15°C. Umidità controllata. I primi germogli emergono in 7-10 giorni.",
-  "Il germoglio sale verso la luce. Cresce il fusto, si aprono foglie lunghe e strette. La pianta impara a stare in piedi.\n\nÈ gennaio. Il trattore distribuisce azoto: 80-120 kg per ettaro. La concimazione sostiene la crescita del fusto.",
-  "Fuoriesce la spiga. Su di essa nascono i fiori, poi i frutti: le cariossidi. Identiche al seme di partenza. Il cerchio si prepara a chiudersi.\n\nÈ maggio. Ogni spiga porta 35-50 cariossidi. Un ettaro coltivato conta fino a 600 spighe per metro quadro.",
-  "Le sostanze nutritive migrano dalle foglie alle cariossidi. La spiga si ingrossa, si fa pesante. La pianta ingiallisce: ha dato tutto.\n\nUmidità del chicco: scende al 13-14%. Il tecnico agrario monitora il campo per stabilire il momento ottimale del raccolto.",
+const ASSICURAZIONI_SCENES = [
+  {
+    title: "Concetti fondamentali",
+    duration: 20,
+    narrationScript:
+      "L'assicurazione è un contratto con cui un soggetto trasferisce a un altro un rischio economico. Il rischio è incerto, ma la sua gestione no.\n\nDue parti: assicurato e assicuratore. Un premio versato regolarmente. Una promessa di indennizzo in caso di sinistro.",
+  },
+  {
+    title: "Tipi di polizze",
+    duration: 19,
+    narrationScript:
+      "Le polizze si dividono in due grandi famiglie: ramo danni e ramo vita. Le prime coprono perdite materiali, le seconde eventi legati alla persona.\n\nPolizze obbligatorie come l'RC auto convivono con coperture facoltative su casa, salute, viaggi e responsabilità professionale.",
+  },
+  {
+    title: "Calcolo del premio",
+    duration: 18,
+    narrationScript:
+      "Il premio è il prezzo del rischio. Si calcola partendo dalla probabilità dell'evento, dal valore del bene e dalla durata del contratto.\n\nL'attuario applica modelli statistici. Più alto il rischio, più alto il premio: è il principio della mutualità su cui si regge l'intero sistema.",
+  },
+  {
+    title: "Sinistro e risarcimento",
+    duration: 20,
+    narrationScript:
+      "Quando l'evento accade, l'assicurato apre un sinistro. Il perito valuta il danno, l'assicuratore verifica la copertura.\n\nIl risarcimento può essere monetario o in forma specifica. I tempi medi di liquidazione in Italia sono di 30-60 giorni dalla denuncia.",
+  },
+  {
+    title: "Ruolo dell'assicuratore",
+    duration: 19,
+    narrationScript:
+      "L'assicuratore non vende solo protezione: gestisce capitali per garantire i risarcimenti futuri. Le riserve tecniche sono il cuore del bilancio.\n\nVigilanza IVASS, requisiti Solvency II, distribuzione tramite agenti, broker e canali digitali: un settore regolato, complesso, in costante evoluzione.",
+  },
 ];
 
-const DEMO_THEMES = {
+const GEOGRAFIA_SCENES = [
+  {
+    title: "Territorio e clima",
+    duration: 20,
+    narrationScript:
+      "Ogni territorio ha una sua impronta climatica: latitudine, altitudine, vicinanza al mare definiscono temperature e precipitazioni.\n\nDalle fasce tropicali alle zone polari, il clima modella il paesaggio e condiziona la vita di chi lo abita.",
+  },
+  {
+    title: "Risorse naturali",
+    duration: 19,
+    narrationScript:
+      "Acqua, suolo, foreste, minerali: le risorse naturali sono la base materiale di ogni economia. Alcune si rinnovano, altre no.\n\nLa loro distribuzione disuguale tra le regioni del pianeta è una delle chiavi di lettura dei rapporti tra gli Stati.",
+  },
+  {
+    title: "Insediamenti urbani",
+    duration: 18,
+    narrationScript:
+      "Più della metà della popolazione mondiale vive in città. Le metropoli concentrano servizi, lavoro, cultura ma anche disuguaglianze.\n\nDal centro storico alle periferie, dalle smart city alle bidonville: l'urbanizzazione racconta come scegliamo di abitare il pianeta.",
+  },
+  {
+    title: "Reti e trasporti",
+    duration: 19,
+    narrationScript:
+      "Strade, ferrovie, porti, rotte aeree, cavi sottomarini: le reti tengono insieme persone, merci e dati su scala planetaria.\n\nUn container parte dalla Cina e attraversa tre oceani in cinque settimane. Un'informazione fa lo stesso percorso in millisecondi.",
+  },
+  {
+    title: "Cambiamenti del paesaggio",
+    duration: 20,
+    narrationScript:
+      "Il paesaggio non è un fondale fisso: cambia con il clima, con l'uso del suolo, con le scelte politiche ed economiche.\n\nDeforestazione, desertificazione, innalzamento dei mari: leggere queste trasformazioni significa capire dove stiamo andando.",
+  },
+];
+
+const ONU_SCENES = [
+  {
+    title: "Origini delle Nazioni Unite",
+    duration: 20,
+    narrationScript:
+      "1945. Finita la Seconda guerra mondiale, 51 Stati firmano a San Francisco la Carta delle Nazioni Unite.\n\nL'obiettivo: prevenire un nuovo conflitto globale, promuovere diritti umani, cooperazione economica e sociale. Oggi gli Stati membri sono 193.",
+  },
+  {
+    title: "Struttura e organi principali",
+    duration: 19,
+    narrationScript:
+      "Sei organi principali compongono l'ONU. Assemblea Generale, Consiglio di Sicurezza, Segretariato, Corte Internazionale di Giustizia, Consiglio Economico e Sociale, Consiglio di Amministrazione Fiduciaria.\n\nIl Consiglio di Sicurezza ha cinque membri permanenti con diritto di veto: Stati Uniti, Russia, Cina, Francia, Regno Unito.",
+  },
+  {
+    title: "Missioni di pace",
+    duration: 18,
+    narrationScript:
+      "I caschi blu sono il volto operativo dell'ONU. Dal 1948 oltre 70 missioni in tutto il mondo, da Cipro al Libano, dal Sahara al Congo.\n\nNon impongono la pace: la mantengono dove le parti hanno scelto di fermarsi. Servono mediazione, monitoraggio, ricostruzione.",
+  },
+  {
+    title: "Diritti umani",
+    duration: 20,
+    narrationScript:
+      "1948. La Dichiarazione Universale dei Diritti Umani fissa principi che valgono per ogni persona, ovunque.\n\nDal Consiglio per i Diritti Umani all'Alto Commissariato, l'ONU lavora per trasformare quei principi in pratica quotidiana, contro discriminazioni e abusi.",
+  },
+  {
+    title: "Sviluppo sostenibile",
+    duration: 19,
+    narrationScript:
+      "Agenda 2030: 17 Obiettivi di Sviluppo Sostenibile sottoscritti da tutti gli Stati membri.\n\nFame, povertà, istruzione, parità di genere, clima, lavoro dignitoso: una mappa condivisa per orientare politiche pubbliche e investimenti dei prossimi anni.",
+  },
+];
+
+function genericInsights(label) {
+  return [
+    {
+      id: `${label}_insight_01`,
+      label: "Riferimento didattico coerente",
+      description: "Timeline coerente con il focus del documento selezionato.",
+    },
+    {
+      id: `${label}_insight_02`,
+      label: "Lessico scolastico strutturato",
+      description: "Terminologia accessibile e adatta a contenuti didattici.",
+    },
+    {
+      id: `${label}_insight_03`,
+      label: "Indicatori contestualizzati",
+      description: "Dati di scenario integrati in forma narrativa e leggibile.",
+    },
+  ];
+}
+
+function withIds(scenes) {
+  return scenes.map((scene, index) => ({
+    id: `scene_${index + 1}`,
+    number: index + 1,
+    ...scene,
+  }));
+}
+
+const TOPICS = {
   "grain-cycle": {
     label: "Ciclo del grano",
+    storyboardTitle: "IL CICLO DEL GRANO",
     subject: "Storia",
     language: "Italiano",
     complexity: "Medium",
-    scenes: DEMO_SCENE_TITLES.map((title, index) => ({
-      id: `scene_${index + 1}`,
-      number: index + 1,
-      title,
-      narrationScript: DEMO_SCENE_SCRIPTS[index],
-      duration: [20, 18, 18, 20, 19][index],
-    })),
+    keywords: [
+      "grano",
+      "semina",
+      "raccolta",
+      "ciclo del grano",
+      "agricolt",
+      "cereale",
+      "spiga",
+      "germinaz",
+    ],
+    scenes: withIds(GRAIN_CYCLE_SCENES),
     archiveInsights: [
       {
-        id: "insight_01",
+        id: "grain_insight_01",
         label: "Riferimento agricolo di lungo periodo",
         description: "Timeline agronomica coerente con il focus selezionato.",
       },
       {
-        id: "insight_02",
+        id: "grain_insight_02",
         label: "Lessico scolastico strutturato",
         description: "Terminologia accessibile e adatta a contenuti didattici.",
       },
       {
-        id: "insight_03",
+        id: "grain_insight_03",
         label: "Indicatori tecnici contestualizzati",
         description: "Dati di campo integrati in forma narrativa e leggibile.",
       },
     ],
+    // Per-style assets: change with the visual style selected in the UI.
+    getAssetBase: (styleKey) => styleKey,
+  },
+  assicurazioni: {
+    label: "Assicurazioni",
+    storyboardTitle: "PRINCIPI ASSICURATIVI",
+    subject: "Diritto / Economia",
+    language: "Italiano",
+    complexity: "Medium",
+    keywords: ["assicur", "polizza", "sinistro", "premio", "risarcim", "ramo danni", "ramo vita"],
+    scenes: withIds(ASSICURAZIONI_SCENES),
+    archiveInsights: genericInsights("assicurazioni"),
+    // Style-agnostic assets: client provided a single render set per topic.
+    getAssetBase: () => "assicurazioni",
+  },
+  geografia: {
+    label: "Geografia",
+    storyboardTitle: "PAESAGGI E POPOLAMENTO",
+    subject: "Geografia",
+    language: "Italiano",
+    complexity: "Low",
+    keywords: ["geografia", "clima", "territorio", "paesaggio", "urban", "trasport", "risorse natural"],
+    scenes: withIds(GEOGRAFIA_SCENES),
+    archiveInsights: genericInsights("geografia"),
+    getAssetBase: () => "geografia",
+  },
+  onu: {
+    label: "Nazioni Unite",
+    storyboardTitle: "LE NAZIONI UNITE",
+    subject: "Storia / Educazione civica",
+    language: "Italiano",
+    complexity: "Medium",
+    keywords: ["onu", "nazioni unite", "united nations", "consiglio di sicurezza", "diritti umani", "agenda 2030"],
+    scenes: withIds(ONU_SCENES),
+    archiveInsights: genericInsights("onu"),
+    getAssetBase: () => "onu",
   },
 };
 
-const DEFAULT_THEME = "grain-cycle";
+const DEFAULT_TOPIC = "grain-cycle";
 const DEMO_IMAGE_VARIANTS = ["variant_01", "variant_02", "variant_03", "variant_04"];
 const DEMO_AUDIO_SETS = ["audio_set_01", "audio_set_02", "audio_set_03", "audio_set_04", "audio_set_05"];
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"];
@@ -59,12 +257,33 @@ export const STYLE_LABELS = {
   fotorealistico: "Fotorealistico",
 };
 
-export function resolveDemoTheme(customPrompt) {
-  const normalized = String(customPrompt || "").toLowerCase();
-  if (normalized.includes("grano") || normalized.includes("semina") || normalized.includes("raccolta") || normalized.includes("ciclo del grano")) {
-    return DEFAULT_THEME;
+export const DEMO_TOPIC_KEYS = Object.keys(TOPICS);
+
+function matchTopicByKeywords(text) {
+  const normalized = String(text || "").toLowerCase();
+  if (!normalized.trim()) return null;
+  for (const [topicKey, topic] of Object.entries(TOPICS)) {
+    if (topic.keywords.some((keyword) => normalized.includes(keyword))) {
+      return topicKey;
+    }
   }
-  return DEFAULT_THEME;
+  return null;
+}
+
+// Resolve a demo topic from any combination of file name and focus prompt.
+// Filename wins when both match different topics — it's the most explicit
+// signal a demo presenter has.
+export function resolveDemoTopic({ fileName = "", customPrompt = "" } = {}) {
+  const fromFile = matchTopicByKeywords(fileName);
+  if (fromFile) return fromFile;
+  const fromPrompt = matchTopicByKeywords(customPrompt);
+  if (fromPrompt) return fromPrompt;
+  return DEFAULT_TOPIC;
+}
+
+// Back-compat export. Older code (and external callers if any) used this name.
+export function resolveDemoTheme(customPrompt) {
+  return resolveDemoTopic({ customPrompt });
 }
 
 function nextFromPool(allValues, usedValues, lastValue) {
@@ -77,61 +296,80 @@ function nextFromPool(allValues, usedValues, lastValue) {
   return { selected, nextUsed };
 }
 
-function buildImageCandidates(styleKey, sceneNumber, preferredVariant) {
+function buildImageCandidates(assetBase, sceneNumber, preferredVariant) {
   const sceneKey = `scene_${String(sceneNumber).padStart(2, "0")}`;
   const preferredOrder = [preferredVariant, ...DEMO_IMAGE_VARIANTS.filter((variant) => variant !== preferredVariant)];
-  return preferredOrder.flatMap((variant) => IMAGE_EXTENSIONS.map((ext) => `/assets/${styleKey}/${sceneKey}/${variant}.${ext}`));
+  return preferredOrder.flatMap((variant) =>
+    IMAGE_EXTENSIONS.map((ext) => `/assets/${assetBase}/${sceneKey}/${variant}.${ext}`),
+  );
 }
 
-function buildAudioCandidates(styleKey, sceneNumber, preferredSet) {
+function buildAudioCandidates(assetBase, sceneNumber, preferredSet) {
   const fileName = `narration_${String(sceneNumber).padStart(2, "0")}`;
   const preferredOrder = [preferredSet, ...DEMO_AUDIO_SETS.filter((setName) => setName !== preferredSet)];
-  return preferredOrder.flatMap((setName) => AUDIO_EXTENSIONS.map((ext) => `/assets/${styleKey}/${setName}/${fileName}.${ext}`));
+  return preferredOrder.flatMap((setName) =>
+    AUDIO_EXTENSIONS.map((ext) => `/assets/${assetBase}/${setName}/${fileName}.${ext}`),
+  );
 }
 
-export function createDemoPackage({ styleKey, customPrompt, mediaHistory, demoRunCount = 0 }) {
-  const themeKey = resolveDemoTheme(customPrompt);
-  const theme = DEMO_THEMES[themeKey];
-  const nextHistory = { ...(mediaHistory || {}) };
-  const styleHistory = nextHistory[styleKey] || {};
+export function createDemoPackage({
+  styleKey,
+  customPrompt,
+  fileName,
+  topicKey,
+  mediaHistory,
+  demoRunCount = 0,
+}) {
+  const resolvedTopicKey = topicKey && TOPICS[topicKey]
+    ? topicKey
+    : resolveDemoTopic({ fileName, customPrompt });
+  const topic = TOPICS[resolvedTopicKey] || TOPICS[DEFAULT_TOPIC];
 
-  // Image variant: toggles deterministically between variant_01 (even runs) and variant_02 (odd runs).
-  // This makes every single Regen visibly switch all images at once, giving a clear "regenerated" feel.
+  const assetBase = topic.getAssetBase(styleKey);
+
+  // The mediaHistory key follows the *asset folder* (not the style) so that
+  // audio rotation history doesn't bleed across topics that share a folder.
+  const nextHistory = { ...(mediaHistory || {}) };
+  const folderHistory = nextHistory[assetBase] || {};
+
+  // Image variant: toggles deterministically between variant_01 (even runs)
+  // and variant_02 (odd runs). Every regen visibly switches all images at
+  // once for a clear "regenerated" feel.
   const selectedVariant = demoRunCount % 2 === 0 ? "variant_01" : "variant_02";
 
   // Audio set: pool-based rotation so each regen uses a different voice take.
-  const audioHistory = styleHistory.audio || { usedSets: [], lastSet: null };
+  const audioHistory = folderHistory.audio || { usedSets: [], lastSet: null };
   const audioSelection = nextFromPool(DEMO_AUDIO_SETS, audioHistory.usedSets, audioHistory.lastSet);
   const selectedAudioSet = audioSelection.selected;
 
-  const scenes = theme.scenes.map((scene) => ({
+  const scenes = topic.scenes.map((scene) => ({
     ...scene,
     imageVariant: selectedVariant,
-    imageUrl: buildImageCandidates(styleKey, scene.number, selectedVariant)[0],
-    imageSources: buildImageCandidates(styleKey, scene.number, selectedVariant),
+    imageUrl: buildImageCandidates(assetBase, scene.number, selectedVariant)[0],
+    imageSources: buildImageCandidates(assetBase, scene.number, selectedVariant),
     audioSet: selectedAudioSet,
-    audioPath: buildAudioCandidates(styleKey, scene.number, selectedAudioSet)[0],
-    audioSources: buildAudioCandidates(styleKey, scene.number, selectedAudioSet),
+    audioPath: buildAudioCandidates(assetBase, scene.number, selectedAudioSet)[0],
+    audioSources: buildAudioCandidates(assetBase, scene.number, selectedAudioSet),
   }));
 
-  styleHistory.audio = {
+  folderHistory.audio = {
     usedSets: audioSelection.nextUsed,
     lastSet: selectedAudioSet,
   };
-  nextHistory[styleKey] = styleHistory;
+  nextHistory[assetBase] = folderHistory;
 
   return {
-    themeKey,
-    themeLabel: theme.label,
+    themeKey: resolvedTopicKey,
+    themeLabel: topic.label,
     documentAnalysis: {
-      subject: theme.subject,
-      language: theme.language,
-      complexity: theme.complexity,
+      subject: topic.subject,
+      language: topic.language,
+      complexity: topic.complexity,
     },
-    archiveInsights: theme.archiveInsights,
+    archiveInsights: topic.archiveInsights,
     scenes,
     storyboard: {
-      title: "IL CICLO DEL GRANO",
+      title: topic.storyboardTitle,
       totalScenes: scenes.length,
       totalDuration: scenes.reduce((total, scene) => total + scene.duration, 0),
       scenes,
