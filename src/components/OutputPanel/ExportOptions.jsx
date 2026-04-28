@@ -1,10 +1,10 @@
-import { Download } from "lucide-react";
+import { Download, Wrench } from "lucide-react";
 import { useState } from "react";
 
 const EXPORT_FORMATS = [
   { id: "storyboard", label: "Storyboard JSON", size: "~2.4 MB", checked: true },
   { id: "audio", label: "Audio MP3", size: "~4.1 MB", checked: true },
-  { id: "video", label: "Video MP4", size: "~24 MB", checked: false },
+  { id: "video", label: "Video MP4", size: "~24 MB", checked: false, wip: true },
   { id: "package", label: "Full Package", size: "~32 MB", checked: false },
 ];
 
@@ -16,12 +16,19 @@ export default function ExportOptions({
 }) {
   const [formats, setFormats] = useState(EXPORT_FORMATS);
 
-  const toggle = (id) =>
+  const toggle = (id) => {
+    const target = formats.find((item) => item.id === id);
+    if (target?.wip) return;
     setFormats((prev) =>
       prev.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)),
     );
+  };
 
-  const canDownload = (id) => Boolean(enabled && exportAvailability[id]);
+  const canDownload = (id) => {
+    const target = formats.find((item) => item.id === id);
+    if (target?.wip) return false;
+    return Boolean(enabled && exportAvailability[id]);
+  };
   const selectedFormats = formats.filter((format) => format.checked && canDownload(format.id));
 
   return (
@@ -29,17 +36,34 @@ export default function ExportOptions({
       <p className="section-title mb-3">EXPORT</p>
       <div className="space-y-2">
         {formats.map((format) => (
-          <div key={format.id} className="rounded-md border border-borderPrimary bg-bgPrimary/45 p-2">
+          <div
+            key={format.id}
+            className={`rounded-md border p-2 ${
+              format.wip
+                ? "border-amber-400/30 bg-amber-400/5"
+                : "border-borderPrimary bg-bgPrimary/45"
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-textSecondary">
+              <label
+                className={`flex items-center gap-2 text-sm ${
+                  format.wip ? "cursor-not-allowed text-textMuted" : "cursor-pointer text-textSecondary"
+                }`}
+              >
                 <input
                   type="checkbox"
-                  checked={format.checked}
+                  checked={format.wip ? false : format.checked}
                   onChange={() => toggle(format.id)}
                   className="h-4 w-4 accent-accentPrimary"
-                  disabled={!enabled}
+                  disabled={!enabled || Boolean(format.wip)}
                 />
                 <span>{format.label}</span>
+                {format.wip ? (
+                  <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-400/35 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.08em] text-amber-200">
+                    <Wrench size={9} />
+                    WIP
+                  </span>
+                ) : null}
               </label>
               <button
                 type="button"
@@ -54,7 +78,9 @@ export default function ExportOptions({
                 <Download size={13} />
               </button>
             </div>
-            <p className="mt-1 pl-6 text-[11px] text-textMuted">{format.size}</p>
+            <p className="mt-1 pl-6 text-[11px] text-textMuted">
+              {format.wip ? "In sviluppo · non disponibile in demo" : format.size}
+            </p>
           </div>
         ))}
       </div>
