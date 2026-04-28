@@ -17,10 +17,32 @@ async function fileToDataUrl(file) {
 function detectSubject(fileName = "") {
   const lower = fileName.toLowerCase();
 
-  // Scienze Agrarie / Botanica — keywords del PDF demo (ciclo del grano, semina, ecc.)
+  // Demo topic packs — keep these in sync with TOPICS in src/utils/demoMode.js
+  if (
+    lower.includes("assicur") || lower.includes("polizza") ||
+    lower.includes("sinistro") || lower.includes("ramo danni") ||
+    lower.includes("ramo vita")
+  ) {
+    return { subject: "Diritto / Economia", complexity: "Medium" };
+  }
+  if (
+    lower.includes("onu") || lower.includes("nazioni unite") ||
+    lower.includes("united nations") || lower.includes("agenda 2030")
+  ) {
+    return { subject: "Storia / Educazione civica", complexity: "Medium" };
+  }
+  if (
+    lower.includes("geografia") || lower.includes("clima") ||
+    lower.includes("territorio") || lower.includes("paesaggio") ||
+    lower.includes("urban") || lower.includes("trasport") ||
+    lower.includes("risorse natural")
+  ) {
+    return { subject: "Geografia", complexity: "Low" };
+  }
+  // Scienze Agrarie / Botanica — default ciclo del grano demo pack
   if (
     lower.includes("grano") || lower.includes("semina") || lower.includes("raccolta") ||
-    lower.includes("ciclo") || lower.includes("agri") || lower.includes("semina") ||
+    lower.includes("ciclo") || lower.includes("agri") ||
     lower.includes("germinazione") || lower.includes("spiga") || lower.includes("cereale") ||
     lower.includes("botanica") || lower.includes("biologia vegetale")
   ) {
@@ -44,9 +66,6 @@ function detectSubject(fileName = "") {
   if (lower.includes("letteratura") || lower.includes("italiano") || lower.includes("dante") ||
     lower.includes("poesia") || lower.includes("romanzo")) {
     return { subject: "Letteratura", complexity: "Medium" };
-  }
-  if (lower.includes("geografia") || lower.includes("clima") || lower.includes("territorio")) {
-    return { subject: "Geografia", complexity: "Low" };
   }
   // Default sensato per materiale didattico Zanichelli
   return { subject: "Scienze Naturali", complexity: "Medium" };
