@@ -626,7 +626,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
-  const styleLabel = STYLE_LABELS[selectedStyle] || "Acquarello";
+  const styleLabel = STYLE_LABELS[selectedStyle] || "Illustrato";
 
   // Reset run count on style change so variant alternation restarts from variant_01
   const handleStyleChange = (newStyle) => {
