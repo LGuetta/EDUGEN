@@ -171,6 +171,15 @@ function withIds(scenes) {
   }));
 }
 
+// Maps the user-selected visual style to the per-topic image subfolder used
+// by the new topic packs (assicurazioni / geografia / onu). The client ships
+// each scene as `<scene>/illustrazione/` (drawn) and `<scene>/photo/`
+// (photographic), so we route acquarello & vettoriale to the illustrative
+// set and fotorealistico to the photo set.
+function styleToImageSubpath(styleKey) {
+  return styleKey === "fotorealistico" ? "photo" : "illustrazione";
+}
+
 const TOPICS = {
   "grain-cycle": {
     label: "Ciclo del grano",
@@ -206,8 +215,11 @@ const TOPICS = {
         description: "Dati di campo integrati in forma narrativa e leggibile.",
       },
     ],
-    // Per-style assets: change with the visual style selected in the UI.
+    // Per-style assets: the entire folder name changes with the style.
+    // Layout: /assets/{style}/scene_XX/variant_YY.png — no extra subpath.
     getAssetBase: (styleKey) => styleKey,
+    getImageSubpath: () => null,
+    getVideoUrl: (styleKey) => `/assets/${styleKey}/video_demo.mp4`,
   },
   assicurazioni: {
     label: "Assicurazioni",
@@ -218,8 +230,11 @@ const TOPICS = {
     keywords: ["assicur", "polizza", "sinistro", "premio", "risarcim", "ramo danni", "ramo vita"],
     scenes: withIds(ASSICURAZIONI_SCENES),
     archiveInsights: genericInsights("assicurazioni"),
-    // Style-agnostic assets: client provided a single render set per topic.
+    // Per-topic root, with style-driven image subfolder.
+    // Layout: /assets/assicurazioni/scene_XX/{illustrazione|photo}/variant_YY.png
     getAssetBase: () => "assicurazioni",
+    getImageSubpath: styleToImageSubpath,
+    getVideoUrl: () => "/assets/assicurazioni/video_demo.mp4",
   },
   geografia: {
     label: "Geografia",
@@ -231,6 +246,8 @@ const TOPICS = {
     scenes: withIds(GEOGRAFIA_SCENES),
     archiveInsights: genericInsights("geografia"),
     getAssetBase: () => "geografia",
+    getImageSubpath: styleToImageSubpath,
+    getVideoUrl: () => "/assets/geografia/video_demo.mp4",
   },
   onu: {
     label: "Nazioni Unite",
@@ -242,6 +259,8 @@ const TOPICS = {
     scenes: withIds(ONU_SCENES),
     archiveInsights: genericInsights("onu"),
     getAssetBase: () => "onu",
+    getImageSubpath: styleToImageSubpath,
+    getVideoUrl: () => "/assets/onu/video_demo.mp4",
   },
 };
 
@@ -296,11 +315,14 @@ function nextFromPool(allValues, usedValues, lastValue) {
   return { selected, nextUsed };
 }
 
-function buildImageCandidates(assetBase, sceneNumber, preferredVariant) {
+function buildImageCandidates(assetBase, imageSubpath, sceneNumber, preferredVariant) {
   const sceneKey = `scene_${String(sceneNumber).padStart(2, "0")}`;
   const preferredOrder = [preferredVariant, ...DEMO_IMAGE_VARIANTS.filter((variant) => variant !== preferredVariant)];
+  const folderPath = imageSubpath
+    ? `${assetBase}/${sceneKey}/${imageSubpath}`
+    : `${assetBase}/${sceneKey}`;
   return preferredOrder.flatMap((variant) =>
-    IMAGE_EXTENSIONS.map((ext) => `/assets/${assetBase}/${sceneKey}/${variant}.${ext}`),
+    IMAGE_EXTENSIONS.map((ext) => `/assets/${folderPath}/${variant}.${ext}`),
   );
 }
 
@@ -326,11 +348,15 @@ export function createDemoPackage({
   const topic = TOPICS[resolvedTopicKey] || TOPICS[DEFAULT_TOPIC];
 
   const assetBase = topic.getAssetBase(styleKey);
+  const imageSubpath = topic.getImageSubpath ? topic.getImageSubpath(styleKey) : null;
+  const videoUrl = topic.getVideoUrl ? topic.getVideoUrl(styleKey) : null;
 
-  // The mediaHistory key follows the *asset folder* (not the style) so that
-  // audio rotation history doesn't bleed across topics that share a folder.
+  // The mediaHistory key follows the *asset folder + image subpath* so that
+  // audio rotation history doesn't bleed across topics that share a folder,
+  // and image-variant history is style-aware where styles share a topic.
+  const historyKey = imageSubpath ? `${assetBase}:${imageSubpath}` : assetBase;
   const nextHistory = { ...(mediaHistory || {}) };
-  const folderHistory = nextHistory[assetBase] || {};
+  const folderHistory = nextHistory[historyKey] || {};
 
   // Image variant: toggles deterministically between variant_01 (even runs)
   // and variant_02 (odd runs). Every regen visibly switches all images at
@@ -345,8 +371,8 @@ export function createDemoPackage({
   const scenes = topic.scenes.map((scene) => ({
     ...scene,
     imageVariant: selectedVariant,
-    imageUrl: buildImageCandidates(assetBase, scene.number, selectedVariant)[0],
-    imageSources: buildImageCandidates(assetBase, scene.number, selectedVariant),
+    imageUrl: buildImageCandidates(assetBase, imageSubpath, scene.number, selectedVariant)[0],
+    imageSources: buildImageCandidates(assetBase, imageSubpath, scene.number, selectedVariant),
     audioSet: selectedAudioSet,
     audioPath: buildAudioCandidates(assetBase, scene.number, selectedAudioSet)[0],
     audioSources: buildAudioCandidates(assetBase, scene.number, selectedAudioSet),
@@ -356,7 +382,7 @@ export function createDemoPackage({
     usedSets: audioSelection.nextUsed,
     lastSet: selectedAudioSet,
   };
-  nextHistory[assetBase] = folderHistory;
+  nextHistory[historyKey] = folderHistory;
 
   return {
     themeKey: resolvedTopicKey,
@@ -374,7 +400,7 @@ export function createDemoPackage({
       totalDuration: scenes.reduce((total, scene) => total + scene.duration, 0),
       scenes,
     },
-    videoUrl: null,
+    videoUrl,
     updatedMediaHistory: nextHistory,
   };
 }

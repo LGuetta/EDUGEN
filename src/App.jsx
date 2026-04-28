@@ -235,9 +235,14 @@ async function resolveDemoPackageMedia(demoPackage) {
     }),
   );
 
+  const resolvedVideoUrl = demoPackage.videoUrl
+    ? await resolveExistingMediaSource([demoPackage.videoUrl])
+    : null;
+
   return {
     ...demoPackage,
     scenes,
+    videoUrl: resolvedVideoUrl,
   };
 }
 
