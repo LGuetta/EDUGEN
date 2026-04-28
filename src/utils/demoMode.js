@@ -271,7 +271,7 @@ const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"];
 const AUDIO_EXTENSIONS = ["mp3", "MP3"];
 
 export const STYLE_LABELS = {
-  acquarello: "Acquarello",
+  acquarello: "Illustrato",
   vettoriale: "Vettoriale",
   fotorealistico: "Fotorealistico",
 };

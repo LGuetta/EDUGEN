@@ -3,7 +3,7 @@ import { FlaskConical, Landmark, Palette, Wrench } from "lucide-react";
 const STYLE_OPTIONS = [
   {
     id: "acquarello",
-    title: "Acquarello",
+    title: "Illustrato",
     icon: Landmark,
   },
   {
